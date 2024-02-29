@@ -7,14 +7,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision.datasets import Cityscapes
-import torchvision.transforms as transforms
+
+from torchmetrics.classification import MulticlassJaccardIndex
 from argparse import ArgumentParser
 
 
 from DataLoader import generate_data_loaders, calculate_mean
 from DataVisualizations import disribution_per_chanel
 
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_arg_parser():
     parser = ArgumentParser()
@@ -28,29 +30,50 @@ def main(args):
 
     # data loading
     
-    trainloader, valloader, testloader = generate_data_loaders(args)
+    train_loader, val_loader = generate_data_loaders(args)
     
     # calculate mean and std of the dataset
-    figure : plt = disribution_per_chanel(calculate_mean(trainloader))
+    figures, targets = next(iter(train_loader))
+    # figure = disribution_per_chanel(calculate_mean(figures))
 
     # visualize example images
 
     # define model
-    model = Model().cuda()
+    model = Model().to(DEVICE)
 
     # define optimizer and loss function (don't forget to ignore class index 255)
-
+    # todo convert to grid optimizer
+    lr = 0.001
+    num_epochs = 10 
+    verbose = True
+    criterion = MulticlassJaccardIndex(num_classes=18, ignore_index=255, average="macro")
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
     # training/validation loop
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        for inputs, labels in train_loader:
+            inputs.to(DEVICE)
+            labels.to(DEVICE)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.detach().item()
+
+        epoch_loss = running_loss / len(train_loader)
+        
+        if verbose:
+            print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}')
+        
 
 
     # save model
 
 
     # visualize some results
-
-    pass
-
 
 if __name__ == "__main__":
     # Get the arguments
