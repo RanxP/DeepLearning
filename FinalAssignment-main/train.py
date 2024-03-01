@@ -33,7 +33,7 @@ def main(args):
     train_loader, val_loader = generate_data_loaders(args)
     
     # calculate mean and std of the dataset
-    figures, targets = next(iter(train_loader))
+    # figures, targets = next(iter(train_loader))
     # figure = disribution_per_chanel(calculate_mean(figures))
 
     # visualize example images
@@ -46,18 +46,19 @@ def main(args):
     lr = 0.001
     num_epochs = 10 
     verbose = True
-    criterion = MulticlassJaccardIndex(num_classes=18, ignore_index=255, average="macro")
+    criterion = MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
     # training/validation loop
     for epoch in range(num_epochs):
         running_loss = 0.0
         for inputs, labels in train_loader:
-            inputs.to(DEVICE)
-            labels.to(DEVICE)
-            optimizer.zero_grad()
+            inputs = inputs.to(DEVICE)
+            labels = labels.to(DEVICE)
             outputs = model(inputs)
+            labels.unsqueeze(1).long().shape
             loss = criterion(outputs, labels)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 

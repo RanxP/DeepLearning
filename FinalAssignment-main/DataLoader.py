@@ -27,17 +27,6 @@ TRANSFORM_TRAIN =  transforms.Compose([
     ])
 
 
-def calculate_mean(dataset):
-    mean_per_image_r, mean_per_image_g, mean_per_image_b = [], [], []
-
-    for image in dataset:
-        mean_per_image_r.append(torch.mean(image[0,:,:]).tolist())
-        mean_per_image_g.append(torch.mean(image[1,:,:]).tolist())
-        mean_per_image_b.append(torch.mean(image[2,:,:]).tolist())
-
-    return mean_per_image_r, mean_per_image_g, mean_per_image_b
-
-
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
     trainset = Cityscapes(root = args.data_path, split='train', mode='fine', 
