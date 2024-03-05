@@ -12,13 +12,13 @@ CHANNEL_MEANS = [0.22460080459713935, 0.26541953831911086, 0.22537076537098202]
 CHANNEL_STDS = [0.019116874995935115, 0.02040196749932445, 0.02062898499852692]
 
 
-TRANSFORM_TEST =  transforms.Compose([
+TRANSFORM_MASK =  transforms.Compose([
     transforms.Resize((256, 256)), # resize
     # data transformation
     transforms.PILToTensor(),
-    transforms.ConvertImageDtype(torch.float32),
+    #.ConvertImageDtype(torch.float32),
     ])
-TRANSFORM_TRAIN =  transforms.Compose([
+TRANSFORM_IMAGE =  transforms.Compose([
     transforms.Resize((256, 256)), # resize
     # data transformation
     transforms.PILToTensor(),
@@ -30,7 +30,7 @@ TRANSFORM_TRAIN =  transforms.Compose([
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
     trainset = Cityscapes(root = args.data_path, split='train', mode='fine', 
-                          transform=TRANSFORM_TRAIN, target_transform = TRANSFORM_TEST,
+                          transform=TRANSFORM_IMAGE, target_transform = TRANSFORM_MASK,
                           target_type='semantic')
     train_subset, val_subset = torch.utils.data.random_split(trainset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
