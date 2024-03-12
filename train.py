@@ -2,6 +2,7 @@
 This file needs to contain the main training loop. The training code should be encapsulated in a main() function to
 avoid any global variables.
 """
+import time
 from model import Model
 import torch
 import torch.nn as nn
@@ -10,9 +11,8 @@ import torch.optim as optim
 
 from torchmetrics.classification import MulticlassJaccardIndex
 from argparse import ArgumentParser
-
 import wandb
-
+import datetime as dt
 
 from DataLoader import generate_data_loaders # , calculate_mean
 # from DataVisualizations import disribution_per_chanel
@@ -32,23 +32,28 @@ def get_arg_parser():
     
     return parser
 
+def _init_wandb(args:ArgumentParser, local:bool = False):
+    if local:
+        run = wandb.init(
+            # Set the project where this run will be logged
+            project="SegmentationTrafficImages",
+            # Track hyperparameters and run metadata
+            config={
+                "learning_rate": args.learning_rate,
+                "epochs": args.number_of_epochs,
+                
+            },
+        )
+    return run
 
 def main(args):
     """define your model, trainingsloop optimitzer etc. here"""
-    logger = logging.getLogger(args.logger_name)
-    logger.setLevel(logging.INFO)
-    
-    # Create a console handler
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-
-    # Add the console handler to the logger
-    logger.addHandler(ch)
-
+    _init_wandb(args)
     # data loading
-    logger.info("Program Started")
+    wandb.log({"Program Started":dt.datetime.now()})
     train_loader, val_loader = generate_data_loaders(args)
-    logger.info("Data loaded")
+    wandb.log({"Data Loaded":dt.datetime.now()})
+    print("Data loaded at ", dt.datetime.now())
     # calculate mean and std of the dataset
     # figures, targets = next(iter(train_loader))
     # figure = disribution_per_chanel(calculate_mean(figures))
@@ -93,7 +98,7 @@ def main(args):
         epoch_loss = running_loss / len(train_loader)
         
         if verbose:
-            logger.info(f'Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}')
+            wandb.log({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,0)})
             
         
         # validation loop
@@ -108,12 +113,12 @@ def main(args):
 
             if verbose:
                 for criterion_name, criterion_loss in criterion_val_performance.items():
-                    logger.info(f'Epoch {epoch + 1}/{num_epochs}, {criterion_name} Loss: {(sum(criterion_loss)/len(val_loader)):.4f}')
+                    wandb.log({f"{criterion_name} Loss": round(sum(criterion_loss)/len(val_loader),4)})
         
 
 
     # save model
-    torch.save(model.state_dict(), PATH)
+    torch.save(model.state_dict(), args.model_path)
 
 
     # visualize some results

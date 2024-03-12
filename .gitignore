@@ -16,3 +16,4 @@ venv/
 # data
 cifar-10-batches-py/
 data/*
+wandb/*
