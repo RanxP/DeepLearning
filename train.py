@@ -29,11 +29,12 @@ def get_arg_parser():
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--logger_name", type=str, default="logger", help="Name of the logger")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
+    parser.add_argument("--local", type=bool, default=True, help="Run the training locally or not")
     
     return parser
 
-def _init_wandb(args:ArgumentParser, local:bool = False):
-    if local:
+def _init_wandb(args:ArgumentParser):
+    if args.local:
         run = wandb.init(
             # Set the project where this run will be logged
             project="SegmentationTrafficImages",
