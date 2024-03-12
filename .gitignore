@@ -16,4 +16,6 @@ venv/
 # data
 cifar-10-batches-py/
 data/*
+!data/.gitkeep 
 wandb/*
+!wandb/.gitkeep 
