@@ -44,7 +44,6 @@ def _init_wandb(args:ArgumentParser, local:bool = False):
                 
             },
         )
-    return run
 
 def main(args):
     """define your model, trainingsloop optimitzer etc. here"""
