@@ -27,7 +27,6 @@ def get_arg_parser():
     parser.add_argument("--model_path", type=str, default="./model", help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=10, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
-    parser.add_argument("--logger_name", type=str, default="logger", help="Name of the logger")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--local", type=bool, default=True, help="Run the training locally or not")
     
@@ -109,11 +108,11 @@ def main(args):
                 labels = labels.squeeze(1).long().to(DEVICE)
                 outputs = model(inputs)
                 for criterion_name, criterion in criterion_val_dict.items():
-                    criterion_val_performance[criterion_name].append(criterion(outputs, labels))
+                    criterion_val_performance[criterion_name].append(criterion(outputs, labels).detach().item())
 
             if verbose:
                 for criterion_name, criterion_loss in criterion_val_performance.items():
-                    wandb.log({f"{criterion_name} Loss": round(sum(criterion_loss)/len(val_loader),4)})
+                    wandb.log({f"{criterion_name} Loss": round(sum(criterion_loss),4)})
         
 
 
