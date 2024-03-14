@@ -7,6 +7,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torchvision.datasets import Cityscapes
 import numpy as np
+from pathlib import Path
 
 CHANNEL_MEANS = [0.22460080459713935, 0.26541953831911086, 0.22537076537098202]
 CHANNEL_STDS = [0.019116874995935115, 0.02040196749932445, 0.02062898499852692]
@@ -29,14 +30,14 @@ TRANSFORM_IMAGE =  transforms.Compose([
 
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
-    trainset = Cityscapes(root = args.data_path, split='train', mode='fine', 
+    trainset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
                           transform=TRANSFORM_IMAGE, target_transform = TRANSFORM_MASK,
                           target_type='semantic')
     train_subset, val_subset = torch.utils.data.random_split(trainset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
     
     trainloader = torch.utils.data.DataLoader(train_subset, batch_size=10,
-                                            shuffle=True, num_workers=2)
+                                            shuffle=True, num_workers=4)
     valloader = torch.utils.data.DataLoader(val_subset, batch_size=10,
                                             shuffle=True, num_workers=2)
     

@@ -19,3 +19,5 @@ data/*
 !data/.gitkeep 
 wandb/*
 !wandb/.gitkeep 
+model/*
+!model/.gitkeep 
