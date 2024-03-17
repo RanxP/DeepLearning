@@ -127,7 +127,8 @@ def main(args):
                 inputs = inputs.to(DEVICE)
                 # ignore labels that are not in test set 
                 labels = labels.long().squeeze()
-                target = map_id_to_train_id(labels).to(DEVICE)
+                labels = map_id_to_train_id(labels)
+                labels = labels.to(DEVICE)
                 outputs = model(inputs)
                 
                 for criterion_name, criterion in criterion_val_dict.items():
