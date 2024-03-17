@@ -1,6 +1,5 @@
 from collections import namedtuple
 import torch
-import matplotlib.pyplot as plt
 
 
 Label = namedtuple( 'Label' , [
@@ -89,24 +88,3 @@ def map_id_to_train_id(label_id):
         # replace the value in the tensor with the train id if the value in the input tensor is equal to the id of the label
         train_id_tensor[label_id == label.id] = label.trainId
     return train_id_tensor
-
-def visualize_cityscapes_label(target):
-    """Visualize the cityscapes label
-    input: Tensor of shape (batch_size, height, width) with values from 0 to 18
-    output: None
-    """
-    
-    # Imports PIL module
-    import numpy as np    
-    import PIL
-    # creating a image object (new image object) with
-    im = PIL.Image.new(mode="RGB", size=(target.shape[1], target.shape[2]))
-    im = np.array(im)
-    for label in LABELS:
-        # replace the value in the tensor with the train id if the value in the input tensor is equal to the id of the label
-        im[target.squeeze() == label.id] = label.color
-    # visualize the label
-    print(np.unique(im))
-    plt.imshow(im)
-    plt.axis("off")
-    plt.show()

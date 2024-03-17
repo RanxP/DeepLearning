@@ -12,15 +12,15 @@ from pathlib import Path
 CHANNEL_MEANS = [0.22460080459713935, 0.26541953831911086, 0.22537076537098202]
 CHANNEL_STDS = [0.019116874995935115, 0.02040196749932445, 0.02062898499852692]
 
-
+IMG_SIZE = (512, 512)
 TRANSFORM_MASK =  transforms.Compose([
-    transforms.Resize((256, 256)), # resize
+    transforms.Resize(size=IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS), # resize
     # data transformation
     transforms.PILToTensor(),
     #.ConvertImageDtype(torch.float32),
     ])
 TRANSFORM_IMAGE =  transforms.Compose([
-    transforms.Resize((256, 256)), # resize
+    transforms.Resize(size=IMG_SIZE,interpolation=transforms.InterpolationMode.LANCZOS), # resize
     # data transformation
     transforms.PILToTensor(),
     transforms.ConvertImageDtype(torch.float32),
@@ -36,9 +36,9 @@ def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.util
     train_subset, val_subset = torch.utils.data.random_split(trainset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
     
-    trainloader = torch.utils.data.DataLoader(train_subset, batch_size=10,
+    trainloader = torch.utils.data.DataLoader(train_subset, batch_size=args.batch_size,
                                             shuffle=True, num_workers=4)
-    valloader = torch.utils.data.DataLoader(val_subset, batch_size=10,
+    valloader = torch.utils.data.DataLoader(val_subset, batch_size=args.batch_size,
                                             shuffle=True, num_workers=2)
     
     
