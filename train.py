@@ -88,7 +88,7 @@ def main(args):
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     
     # creterion for validation
-    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss() }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
+    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255) }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
     criterion_val_performance = {key: {'loss': [], 'outputs': [], 'labels': []} for key in criterion_val_dict.keys()}
     print("criterion and optimizer defined at ", dt.datetime.now())
     # training/validation loop
