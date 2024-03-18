@@ -55,8 +55,7 @@ def _init_wandb(args:ArgumentParser):
             },
         )
 
-def main(args):
-    """define your model, trainingsloop optimitzer etc. here"""
+def _print_quda_info():
     if torch.cuda.is_available():
         # torch.cuda.set_device(0)
         print("Current CUDA device: ", torch.cuda.current_device())
@@ -64,8 +63,18 @@ def main(args):
         print("Device variable: ", DEVICE)
     else:
         print("CUDA is not available. Using CPU.")
-   
+        
+def _hot_load_model(model :Model ,model_path:str):
+    full_model_path = os.path.join(os.getcwd(), model_path)
+    model.load_state_dict(torch.load(full_model_path))
+    model.eval()
+    return model
+
+def main(args):
+    """define your model, trainingsloop optimitzer etc. here"""
     _init_wandb(args)
+    _print_quda_info
+    
     # data loading
     wandb.log({"Program Started":dt.datetime.now()})
     train_loader, val_loader = generate_data_loaders(args)
@@ -76,6 +85,8 @@ def main(args):
 
     # define model
     model = Model().to(DEVICE)
+    if args.local_exec:
+        model = _hot_load_model(model, Path("model/model.pt"))
 
     # define optimizer and loss function (don't forget to ignore class index 255)
     # todo convert to grid optimizer
@@ -168,7 +179,7 @@ def main(args):
     model_path = os.path.join(model_dir, model_filename)
 
     # Save the model
-    torch.save(model.state_dict(), model_path)
+    torch.save(model.state_dict(), model_dir + model_filename)
 
     # visualize some results
     print("Finished at ", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

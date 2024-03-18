@@ -21,3 +21,6 @@ wandb/*
 !wandb/.gitkeep 
 model/*
 !model/.gitkeep 
+
+# logs
+temp_plot.png

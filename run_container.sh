@@ -5,4 +5,4 @@ export WANDB_CACHE_DIR=wandb/$SLURM_JOBID
 export WANDB_START_METHOD="thread"
 wandb login
 
-torchrun --nnodes=1 --nproc_per_node=1 train.py --data_path "/gpfs/work5/0/jhstue005/JHS_data/CityScapes" --local_exec False --batch_size 10
+torchrun --nnodes=1 --nproc_per_node=1 train.py --data_path "/gpfs/work5/0/jhstue005/JHS_data/CityScapes" --local_exec False --batch_size 10 --workers 32 --number_of_epochs
