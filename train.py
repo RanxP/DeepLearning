@@ -2,6 +2,7 @@
 This file needs to contain the main training loop. The training code should be encapsulated in a main() function to
 avoid any global variables.
 """
+from ast import arg
 import os
 import time
 import datetime as dt
@@ -16,7 +17,7 @@ import torch.optim as optim
 from torchmetrics.classification import MulticlassJaccardIndex
 
 import wandb
-from numpy import mean
+from numpy import argmax, mean
 from tqdm import tqdm
 
 
@@ -95,7 +96,7 @@ def main(args):
     for epoch in range(num_epochs):
         running_loss = 0.0
         model.train()
-        # training loop
+        training loop
         for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{num_epochs}"):
             inputs = inputs.to(DEVICE)
             # ignore labels that are not in test set 
@@ -110,15 +111,16 @@ def main(args):
             optimizer.step()
 
             running_loss += loss.detach().item()
-
-            # Delete variables to free up memory
-            # del inputs, target, labels, outputs, loss
+            break
+            Delete variables to free up memory
+            del inputs, target, labels, outputs, loss
 
         epoch_loss = running_loss / len(train_loader)
         
         if verbose:
             wandb.log({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
             print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
+            
             
         # validation loop
         model.eval()
@@ -130,14 +132,16 @@ def main(args):
                 labels = map_id_to_train_id(labels)
                 labels = labels.to(DEVICE)
                 outputs = model(inputs)
+                argmax_outputs = torch.argmax(input=outputs,dim=1)
+                
                 
                 for criterion_name, criterion in criterion_val_dict.items():
                     loss_value = criterion(outputs, labels).detach().item()
                     criterion_val_performance[criterion_name]['loss'].append(loss_value)
-                    criterion_val_performance[criterion_name]['outputs'].extend(outputs.detach())
-                    criterion_val_performance[criterion_name]['labels'].extend(labels.detach())
-                    
-                
+                    criterion_val_performance[criterion_name]['outputs'].extend(argmax_outputs.cpu())
+                    criterion_val_performance[criterion_name]['labels'].extend(labels.cpu())
+                print(argmax_outputs.shape, labels.shape)
+                process_validation_performance(criterion_val_performance)
 
                 # Later, when logging or printing:
                 if verbose:
@@ -151,12 +155,18 @@ def main(args):
     torch.cuda.empty_cache()
 
     # save model
-    try:
-        os.mkdir(args.model_path)
-    except FileExistsError:
-        pass
-    path_to_model = os.path.join(args.model_path, f"model {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.pth")
-    torch.save(model.state_dict(), path_to_model)
+    model_dir = os.path.join(os.getcwd(), args.model_path)
+    os.makedirs(model_dir, exist_ok=True)
+
+    # Create a timestamp for the saved model
+    timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H:%M')
+    model_filename = f"model_{timestamp}.pth"
+
+    # Create the full path for the saved model
+    model_path = os.path.join(model_dir, model_filename)
+
+    # Save the model
+    torch.save(model.state_dict(), model_path)
 
     # visualize some results
     print("Finished at ", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
