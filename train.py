@@ -85,6 +85,7 @@ def main(args):
 
     # define model
     model = Model().to(DEVICE)
+    print(args.local_exec)
     if args.local_exec:
         model = _hot_load_model(model, Path("model/model.pt"))
 
@@ -163,9 +164,6 @@ def main(args):
                 except Exception as e:
                     print("Error in process_validation_performance: ", e)
                         
-
-    # Clear CUDA cache and collect garbage
-    torch.cuda.empty_cache()
 
     # save model
     model_dir = os.path.join(os.getcwd(), args.model_path)
