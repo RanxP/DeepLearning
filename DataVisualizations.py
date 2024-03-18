@@ -49,7 +49,7 @@ def visualize_criterion(baseline, prediction, loss, criterion_name:str):
     output: None
     """
     # create a figure and a set of subplots
-    fig, axs = plt.subplots(2, 1, figsize=(5, 15))
+    fig, axs = plt.subplots(1, 2, figsize=(5, 10))
     # visualize the baseline
     axs[0].imshow(transform_list_to_class_color(baseline))
     axs[0].set_title('Baseline')
