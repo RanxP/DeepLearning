@@ -90,7 +90,7 @@ def main(args):
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     
     # creterion for validation
-    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255) }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
+    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean') }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
     
     print("criterion and optimizer defined at ", dt.datetime.now())
     # training/validation loop
@@ -138,10 +138,13 @@ def main(args):
                 
                 for criterion_name, criterion in criterion_val_dict.items():
                     loss_value = criterion(outputs, labels).detach().item()
-                    criterion_val_performance[criterion_name]['loss'].extend(loss_value)
-                    criterion_val_performance[criterion_name]['outputs'].extend(argmax_outputs.cpu())
-                    criterion_val_performance[criterion_name]['labels'].extend(labels.cpu())
-                print(argmax_outputs.shape, labels.shape)
+                    criterion_val_performance[criterion_name]['loss'].append(loss_value)
+                    criterion_val_performance[criterion_name]['outputs'].append(argmax_outputs.cpu())
+                    criterion_val_performance[criterion_name]['labels'].append(labels.cpu())
+                # print(argmax_outputs.shape, labels.shape)
+                # print(loss_value)
+                # print(criterion_val_performance[criterion_name]['loss'])
+                
                 # Later, when logging or printing:
             if verbose:
                 try:
@@ -173,9 +176,9 @@ def main(args):
 
 def process_validation_performance(criterion_val_performance:dict):
     for criterion_name, performance in criterion_val_performance.items():
-        criterion_loss = performance['loss'][-1]
-        output_tensors = performance['outputs'][-1]
-        label_tensors = performance['labels'][-1]
+        criterion_loss = performance['loss']
+        output_tensors = performance['outputs']
+        label_tensors = performance['labels']
         
         wandb.log({f"{criterion_name} Loss": round(mean(criterion_loss),4)})
         print({f"{criterion_name} Loss": round(mean(criterion_loss),4)})
