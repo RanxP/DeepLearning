@@ -35,7 +35,7 @@ def get_arg_parser():
     """add more arguments here and change the default values to your needs in the run_container.sh file"""
     parser.add_argument("--batch_size", type=int, default=5, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
-    parser.add_argument("--workers", type=str, default="8", help="Path to save the model")
+    parser.add_argument("--workers", type=int, default=8, help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=1, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
