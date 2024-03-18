@@ -96,7 +96,7 @@ def main(args):
     for epoch in range(num_epochs):
         running_loss = 0.0
         model.train()
-        training loop
+        # training loop
         for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{num_epochs}"):
             inputs = inputs.to(DEVICE)
             # ignore labels that are not in test set 
@@ -111,8 +111,7 @@ def main(args):
             optimizer.step()
 
             running_loss += loss.detach().item()
-            break
-            Delete variables to free up memory
+            # Delete variables to free up memory
             del inputs, target, labels, outputs, loss
 
         epoch_loss = running_loss / len(train_loader)
