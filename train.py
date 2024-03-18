@@ -35,6 +35,7 @@ def get_arg_parser():
     """add more arguments here and change the default values to your needs in the run_container.sh file"""
     parser.add_argument("--batch_size", type=int, default=5, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
+    parser.add_argument("--workers", type=str, default="8", help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=1, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
@@ -90,7 +91,7 @@ def main(args):
     
     # creterion for validation
     criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255) }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
-    criterion_val_performance = {key: {'loss': [], 'outputs': [], 'labels': []} for key in criterion_val_dict.keys()}
+    
     print("criterion and optimizer defined at ", dt.datetime.now())
     # training/validation loop
     for epoch in range(num_epochs):
@@ -122,6 +123,7 @@ def main(args):
             
             
         # validation loop
+        criterion_val_performance = {key: {'loss': [], 'outputs': [], 'labels': []} for key in criterion_val_dict.keys()}
         model.eval()
         with torch.no_grad():
             for inputs, labels in val_loader:
@@ -136,18 +138,16 @@ def main(args):
                 
                 for criterion_name, criterion in criterion_val_dict.items():
                     loss_value = criterion(outputs, labels).detach().item()
-                    criterion_val_performance[criterion_name]['loss'].append(loss_value)
+                    criterion_val_performance[criterion_name]['loss'].extend(loss_value)
                     criterion_val_performance[criterion_name]['outputs'].extend(argmax_outputs.cpu())
                     criterion_val_performance[criterion_name]['labels'].extend(labels.cpu())
                 print(argmax_outputs.shape, labels.shape)
-                process_validation_performance(criterion_val_performance)
-
                 # Later, when logging or printing:
-                if verbose:
-                    try:
-                        process_validation_performance(criterion_val_performance)
-                    except Exception as e:
-                        print("Error in process_validation_performance: ", e)
+            if verbose:
+                try:
+                    process_validation_performance(criterion_val_performance)
+                except Exception as e:
+                    print("Error in process_validation_performance: ", e)
                         
 
     # Clear CUDA cache and collect garbage
@@ -173,9 +173,9 @@ def main(args):
 
 def process_validation_performance(criterion_val_performance:dict):
     for criterion_name, performance in criterion_val_performance.items():
-        criterion_loss = performance['loss']
-        output_tensors = performance['outputs']
-        label_tensors = performance['labels']
+        criterion_loss = performance['loss'][-1]
+        output_tensors = performance['outputs'][-1]
+        label_tensors = performance['labels'][-1]
         
         wandb.log({f"{criterion_name} Loss": round(mean(criterion_loss),4)})
         print({f"{criterion_name} Loss": round(mean(criterion_loss),4)})

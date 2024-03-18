@@ -37,9 +37,9 @@ def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.util
                                             generator=torch.Generator().manual_seed(1))
     
     trainloader = torch.utils.data.DataLoader(train_subset, batch_size=args.batch_size,
-                                            shuffle=True, num_workers=4)
+                                            shuffle=True, num_workers=args.workers)
     valloader = torch.utils.data.DataLoader(val_subset, batch_size=args.batch_size,
-                                            shuffle=True, num_workers=2)
+                                            shuffle=True, num_workers=args.workers)
     
     
     return trainloader, valloader
