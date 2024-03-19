@@ -43,17 +43,16 @@ def get_arg_parser():
     
     return parser
 
-def _init_wandb(args:ArgumentParser):
-    if not args.cloud_exec:
-        run = wandb.init(
-            # Set the project where this run will be logged
-            project="SegmentationTrafficImages",
-            # Track hyperparameters and run metadata
-            config={
-                "learning_rate": args.learning_rate,
-                "epochs": args.number_of_epochs,
-            },
-        )
+def _init_wandb():
+    run = wandb.init(
+        # Set the project where this run will be logged
+        project="SegmentationTrafficImages",
+        # Track hyperparameters and run metadata
+        config={
+            "learning_rate": args.learning_rate,
+            "epochs": args.number_of_epochs,
+        },)
+    wandb.log({"Program Started":dt.datetime.now()})
 
 def _print_quda_info():
     if torch.cuda.is_available():
@@ -72,22 +71,18 @@ def _hot_load_model(model :Model ,model_path:str):
 
 def main(args):
     """define your model, trainingsloop optimitzer etc. here"""
-    _init_wandb(args)
+    _init_wandb()
     _print_quda_info
     
-    # data loading
-    wandb.log({"Program Started":dt.datetime.now()})
     train_loader, val_loader = generate_data_loaders(args)
-    wandb.log({"Data Loaded":dt.datetime.now()})
-    print("Data loaded at ", dt.datetime.now())
     
     # visualize example images
 
     # define model
     model = Model().to(DEVICE)
     print(args.cloud_exec)
-    if not args.cloud_exec:
-        model = _hot_load_model(model, Path("model/model.pt"))
+    # if not args.cloud_exec:
+        # model = _hot_load_model(model, Path("model/model.pt"))
 
     # define optimizer and loss function (don't forget to ignore class index 255)
     # todo convert to grid optimizer

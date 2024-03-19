@@ -8,6 +8,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import Cityscapes
 import numpy as np
 from pathlib import Path
+import wandb
 
 CHANNEL_MEANS = [0.485, 0.456, 0.406]
 CHANNEL_STDS = [0.229, 0.224, 0.225]
@@ -63,6 +64,7 @@ def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.util
                                             shuffle=True, num_workers=args.workers)
     valloader = torch.utils.data.DataLoader(val_subset, batch_size=args.batch_size,
                                             shuffle=True, num_workers=args.workers)
+    wandb.log({"Data Loaded":dt.datetime.now()})
     
     
     return trainloader, valloader
