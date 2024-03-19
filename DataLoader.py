@@ -9,6 +9,8 @@ from torchvision.datasets import Cityscapes
 import numpy as np
 from pathlib import Path
 import wandb
+import datetime as dt
+import random
 
 CHANNEL_MEANS = [0.485, 0.456, 0.406]
 CHANNEL_STDS = [0.229, 0.224, 0.225]
@@ -21,40 +23,55 @@ IMG_SIZE = (512,1024)
 
 # color or gray scale transformations
 
-TRANSFORM_STRUCTURE = [
-    transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
-    # transforms.RandomCrop(size=IMG_SIZE)
-    # transforms.RandomRotation(degrees=10),
-    ]
+TRANSFORM_STRUCTURE = transforms.Compose([
+    # transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
+    transforms.RandomCrop(size=IMG_SIZE),
+    transforms.RandomRotation(degrees=10),
+    ])
 
-TRANSFORM_IMAGE =  transforms.Compose(
-    TRANSFORM_STRUCTURE + [
+TRANSFORM_IMAGE =  transforms.Compose([
+    # TRANSFORM_STRUCTURE + [
     # data transformation
     transforms.PILToTensor(),
     transforms.ConvertImageDtype(torch.float32),
     # transforms.Normalize(mean=CHANNEL_MEANS, std = CHANNEL_STDS)
     ])
 
-TRANSFORM_MASK =  transforms.Compose(
-    TRANSFORM_STRUCTURE + [
+TRANSFORM_MASK =  transforms.Compose([
+    # TRANSFORM_STRUCTURE + [
     # data transformation
     transforms.PILToTensor(),
 ])
 
-# def transform_dual(instance):
-#     image, target = instance
-#     transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
-#     image, target = transform(image, target)
+class RandomTransformsDual:
+    def __init__(self, transform):
+        self.transform = transform
 
-#     image = TRANSFORM_IMAGE(image)
-#     target = TRANSFORM_MASK(target)
+    def __call__(self, img, target):
+        seed = np.random.randint(2147483647)
+        random.seed(seed)
+        img = self.transform(img)
 
-#     return image, target
+        random.seed(seed)
+        target = self.transform(target)
+
+        return img, target
+
+def transform_dual(image, target):
+    # image, target = instance
+    transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
+    image, target = transform(image, target)
+
+    image = TRANSFORM_IMAGE(image)
+    target = TRANSFORM_MASK(target)
+
+    return image, target
 
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
     trainset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
-                      transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
+                    #   transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
+                    transforms=transform_dual,
                       target_type='semantic')
     
     train_subset, val_subset = torch.utils.data.random_split(trainset, [0.8, 0.2],
