@@ -15,14 +15,13 @@ class Model(nn.Module):
         self.e4 = encoder_block(512, 1024)
 
         """ Bottleneck """
-        self.b = conv_block(1024, 1536)
+        self.b = conv_block(1024, 1024)
 
         """ Decoder """
-        self.d1 = decoder_block(1536, 1024)
-        self.d2 = decoder_block(1024, 512)
-        self.d3 = decoder_block(512, 256)
-        self.d4 = decoder_block(256, 128)
-
+        self.d1 = decoder_block(1024, 512)
+        self.d2 = decoder_block(512, 256)
+        self.d3 = decoder_block(256, 128)
+        self.d4 = decoder_block(128, 128)
         """ Classifier """
         self.pre_outputs = nn.Conv2d(128, 64, kernel_size=5, padding=2)
         self.outputs = nn.Conv2d(64, 34, kernel_size=1, padding=0)
