@@ -10,7 +10,7 @@ class Model(nn.Module):
 
         """ Encoder """
         self.e1 = encoder_block(3, 128)
-        self.e2 = encoder_block(128, 128)
+        self.e2 = encoder_block(128, 256)
         self.e3 = encoder_block(256, 512)
         self.e4 = encoder_block(512, 1024)
 
