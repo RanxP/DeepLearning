@@ -39,7 +39,7 @@ def get_arg_parser():
     parser.add_argument("--number_of_epochs", type=int, default=1, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
-    parser.add_argument("--cloud_exec", action=BooleanOptionalAction, help="Run the training locally or not")
+    parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
     
     return parser
 
@@ -51,7 +51,8 @@ def _init_wandb():
         config={
             "learning_rate": args.learning_rate,
             "epochs": args.number_of_epochs,
-        },)
+        })
+    time.sleep(2)
     wandb.log({"Program Started":dt.datetime.now()})
 
 def _print_quda_info():
