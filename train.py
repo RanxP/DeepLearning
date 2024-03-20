@@ -25,7 +25,7 @@ from DataLoader import generate_data_loaders # , calculate_mean
 from utils import LABELS, map_id_to_train_id
 from DataVisualizations import visualize_criterion
 
-
+# Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     

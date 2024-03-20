@@ -49,11 +49,12 @@ class RandomTransformsDual:
 
     def __call__(self, img, target):
         seed = np.random.randint(2147483647)
-        random.seed(seed)
+        torch.manual_seed(seed=seed)
         img = self.transform(img)
-
-        random.seed(seed)
+        torch.manual_seed(seed=seed)
         target = self.transform(target)
+        #release the manual seed
+        torch.seed()
 
         return img, target
 

@@ -16,7 +16,7 @@ def transform_tensor_to_class_collor(target) -> np.array:
     """
 
     # creating a image object (new image object) with
-    im = PIL.Image.new(mode="RGB", size=(target.shape[1], target.shape[2]))
+    im = PIL.Image.new(mode="RGB", size=(target.shape[2], target.shape[1]))
     im = np.array(im)
     for label in LABELS:
         # replace the value in the tensor with the train id if the value in the input tensor is equal to the id of the label
@@ -31,7 +31,7 @@ def transform_list_to_class_color(target) -> np.array:
     """
 
     # creating a image object (new image object) with
-    im = PIL.Image.new(mode="RGB", size=(target.shape[0], target.shape[1]))
+    im = PIL.Image.new(mode="RGB", size=(target.shape[1], target.shape[0]))
     im = np.array(im)
     for label in LABELS:
         # replace the value in the tensor with the train id if the value in the input tensor is equal to the id of the label
