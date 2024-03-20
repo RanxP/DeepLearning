@@ -9,21 +9,22 @@ class Model(nn.Module):
         super().__init__()
 
         """ Encoder """
-        self.e1 = encoder_block(3, 64)
-        self.e2 = encoder_block(64, 128)
-        self.e3 = encoder_block(128, 256)
-        self.e4 = encoder_block(256, 512)
+        self.e1 = encoder_block(3, 128)
+        self.e2 = encoder_block(128, 128)
+        self.e3 = encoder_block(256, 512)
+        self.e4 = encoder_block(512, 1024)
 
         """ Bottleneck """
-        self.b = conv_block(512, 1024)
+        self.b = conv_block(1024, 1536)
 
         """ Decoder """
-        self.d1 = decoder_block(1024, 512)
-        self.d2 = decoder_block(512, 256)
-        self.d3 = decoder_block(256, 128)
-        self.d4 = decoder_block(128, 64)
+        self.d1 = decoder_block(1536, 1024)
+        self.d2 = decoder_block(1024, 512)
+        self.d3 = decoder_block(512, 256)
+        self.d4 = decoder_block(256, 128)
 
         """ Classifier """
+        self.pre_outputs = nn.Conv2d(128, 64, kernel_size=5, padding=2)
         self.outputs = nn.Conv2d(64, 34, kernel_size=1, padding=0)
 
     def forward(self, inputs):
@@ -43,7 +44,8 @@ class Model(nn.Module):
         d4 = self.d4(d3, s1)
 
         """ Segmentation output """
-        outputs = self.outputs(d4)
+        pre_outputs = self.pre_outputs(d4)
+        outputs = self.outputs(pre_outputs)
 
         return outputs
 
