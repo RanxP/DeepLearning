@@ -167,7 +167,7 @@ def main(args):
 
     # Create a timestamp for the saved model
     timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H:%M')
-    model_filename = f"model_{timestamp}.pth"
+    model_filename = f"/model_{timestamp}.pth"
 
     # Create the full path for the saved model
     model_path = os.path.join(model_dir, model_filename)
