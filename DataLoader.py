@@ -25,8 +25,8 @@ IMG_SIZE = (512,1024)
 
 TRANSFORM_STRUCTURE = transforms.Compose([
     # transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
-    transforms.RandomCrop(size=IMG_SIZE),
     transforms.RandomRotation(degrees=10),
+    transforms.RandomCrop(size=IMG_SIZE),
     ])
 
 TRANSFORM_IMAGE =  transforms.Compose([
@@ -34,7 +34,7 @@ TRANSFORM_IMAGE =  transforms.Compose([
     # data transformation
     transforms.PILToTensor(),
     transforms.ConvertImageDtype(torch.float32),
-    # transforms.Normalize(mean=CHANNEL_MEANS, std = CHANNEL_STDS)
+    transforms.Normalize(mean=CHANNEL_MEANS, std = CHANNEL_STDS)
     ])
 
 TRANSFORM_MASK =  transforms.Compose([
@@ -58,7 +58,7 @@ class RandomTransformsDual:
 
         return img, target
 
-def transform_dual(image, target):
+def transform_dual_train(image, target):
     # image, target = instance
     transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
     image, target = transform(image, target)
@@ -68,14 +68,28 @@ def transform_dual(image, target):
 
     return image, target
 
+def transform_dual_val(image, target):
+    image = TRANSFORM_IMAGE(image)
+    target = TRANSFORM_MASK(target)
+
+    return image, target
+
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
     trainset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
                     #   transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
-                    transforms=transform_dual,
+                    transforms=transform_dual_train,
                       target_type='semantic')
     
-    train_subset, val_subset = torch.utils.data.random_split(trainset, [0.8, 0.2],
+    train_subset, _ = torch.utils.data.random_split(trainset, [0.8, 0.2],
+                                            generator=torch.Generator().manual_seed(1))
+    
+    valset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
+                    #   transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
+                    transforms=transform_dual_val,
+                      target_type='semantic')
+    
+    _, val_subset = torch.utils.data.random_split(valset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
     
     trainloader = torch.utils.data.DataLoader(train_subset, batch_size=args.batch_size,

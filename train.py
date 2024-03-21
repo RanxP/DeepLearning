@@ -149,9 +149,6 @@ def main(args):
                     criterion_val_performance[criterion_name]['loss'].append(loss_value)
                     criterion_val_performance[criterion_name]['outputs'].append(argmax_outputs.cpu())
                     criterion_val_performance[criterion_name]['labels'].append(labels.cpu())
-                # print(argmax_outputs.shape, labels.shape)
-                # print(loss_value)
-                # print(criterion_val_performance[criterion_name]['loss'])
                 
                 # Later, when logging or printing:
             if verbose:
