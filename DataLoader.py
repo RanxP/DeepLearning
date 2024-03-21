@@ -24,11 +24,18 @@ IMG_SIZE = (512,1024)
 
 # color or gray scale transformations
 
-TRANSFORM_STRUCTURE = transforms.Compose([
-    # transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
-    transforms.RandomRotation(degrees=5),
-    transforms.RandomCrop(size=IMG_SIZE),
-    ])
+def TRANSFORM_STRUCTURE(img):
+    random.seed(torch.initial_seed())
+    img = transforms.RandomRotation(degrees=5)(img)
+
+    random.seed(torch.initial_seed())
+    resize_factor =  random.uniform(0.5, 1.9)
+    resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
+    img = transforms.RandomCrop(size=resized_img_size)(img)
+
+    img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
+
+    return img
 
 TRANSFORM_STRUCTURE_VAL = transforms.Compose([
     transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
@@ -74,7 +81,8 @@ def transform_dual_train(image, target):
     return image, target
 
 def transform_dual_val(image, target):
-    image, target = TRANSFORM_STRUCTURE_VAL(image,target)
+    image = TRANSFORM_STRUCTURE_VAL(image)
+    target = TRANSFORM_STRUCTURE_VAL(target)
     image = TRANSFORM_IMAGE(image)
     target = TRANSFORM_MASK(target)
 
