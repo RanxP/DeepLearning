@@ -1,5 +1,3 @@
-from re import T
-from unittest.mock import Base
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,7 +14,7 @@ import random
 CHANNEL_MEANS = [0.485, 0.456, 0.406]
 CHANNEL_STDS = [0.229, 0.224, 0.225]
 
-IMG_SIZE = (512,1024)
+IMG_SIZE = (256,512)
 
 # ideas 5 crop
 # perspective transform
@@ -29,7 +27,7 @@ def TRANSFORM_STRUCTURE(img):
     img = transforms.RandomRotation(degrees=5)(img)
 
     random.seed(torch.initial_seed())
-    resize_factor =  random.uniform(0.5, 1.9)
+    resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
     resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
     img = transforms.RandomCrop(size=resized_img_size)(img)
 
