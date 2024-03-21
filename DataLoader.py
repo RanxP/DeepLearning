@@ -1,3 +1,4 @@
+from re import T
 from unittest.mock import Base
 import torch
 import torch.nn as nn
@@ -25,9 +26,13 @@ IMG_SIZE = (512,1024)
 
 TRANSFORM_STRUCTURE = transforms.Compose([
     # transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
-    transforms.RandomRotation(degrees=10),
+    transforms.RandomRotation(degrees=5),
     transforms.RandomCrop(size=IMG_SIZE),
     ])
+
+TRANSFORM_STRUCTURE_VAL = transforms.Compose([
+    transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
+])
 
 TRANSFORM_IMAGE =  transforms.Compose([
     # TRANSFORM_STRUCTURE + [
@@ -69,6 +74,7 @@ def transform_dual_train(image, target):
     return image, target
 
 def transform_dual_val(image, target):
+    image, target = TRANSFORM_STRUCTURE_VAL(image,target)
     image = TRANSFORM_IMAGE(image)
     target = TRANSFORM_MASK(target)
 
