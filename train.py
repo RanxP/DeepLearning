@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchmetrics.classification import MulticlassJaccardIndex
+from torchmetrics.classification import Dice, MulticlassJaccardIndex
 
 import wandb
 from numpy import argmax, mean
@@ -98,7 +98,12 @@ def main(args):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     
     # creterion for validation
-    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean'), }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
+    try:
+        criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean'), 
+                          "Dice": Dice(average=None,num_classes=20)}#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
+    except Exception as e:
+        print("Error in process_validation_performance: ", e)
+        criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean')}
     
     print("criterion and optimizer defined at ", dt.datetime.now())
     # log model and criterion
