@@ -80,8 +80,8 @@ def main(args):
     # visualize example images
 
     # define model
-    model = Model().to(DEVICE)
-    print(args.cloud_exec)
+    model = Model().init_weights()
+    model = model.to(DEVICE)
     # if not args.cloud_exec:
         # model = _hot_load_model(model, Path("model/model.pt"))
 
@@ -93,14 +93,16 @@ def main(args):
     print("model defined at ", dt.datetime.now())
     
     # criterion and optimizer for training
-    # criterion = MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")
     criterion = nn.CrossEntropyLoss(ignore_index=255)
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     
     # creterion for validation
-    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean') }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
+    criterion_val_dict = {"CrossEntropy": nn.CrossEntropyLoss(ignore_index=255,reduction='mean'), }#"JaccardIndex": MulticlassJaccardIndex(num_classes=34, ignore_index=255, average="macro")}
     
     print("criterion and optimizer defined at ", dt.datetime.now())
+    # log model and criterion
+    wandb.watch(model,criterion,log="all",log_freq=50)
     # training/validation loop
     for epoch in range(num_epochs):
         running_loss = 0.0
