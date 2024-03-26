@@ -35,7 +35,7 @@ def get_arg_parser():
     parser = ArgumentParser()
     parser.add_argument("--data_path", type=str, default="data", help="Path to the data")
     """add more arguments here and change the default values to your needs in the run_container.sh file"""
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size for training and validation")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
     parser.add_argument("--workers", type=int, default=8, help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=1, help="nr of epochs in training")
@@ -166,8 +166,6 @@ def main(args):
                 criterion_val_performance['outputs'].append(argmax_outputs.cpu())
                 criterion_val_performance['labels'].append(labels.cpu())
                 
-                break
-                
                 # Later, when logging or printing:
             if verbose:
                 process_validation_performance(criterion_val_performance)
@@ -199,19 +197,12 @@ def process_validation_performance(criterion_val_performance:dict):
     
     # Calculate the mean loss for each criterion
     # add jaccard index
-    try:
-        dice_stack = torch.stack(criterion_losses["Dice"])
-        print(dice_stack.shape)
-        dice_loss_per_class= torch.mean(dice_stack["Dice"],dim=0)
-        print(dice_loss_per_class)
-        dice_loss_per_class= torch.mean(criterion_losses["Dice"],dim=0)
-        print(dice_loss_per_class)
-    except:
-        print("error")
+    dice_stack = torch.stack(criterion_losses["Dice"])
+    dice_loss_per_class= torch.mean(dice_stack,dim=0)
     # dice_loss_per_class= torch.mean(criterion_losses["Dice"],dim=0)
     for train_id, dice in enumerate(dice_loss_per_class):
-        wandb.log({f"Dice_{train_id_to_name(train_id)}": round(dice,4)})
-        print({f"Dice_{train_id_to_name(train_id)}": round(dice,4)})
+        wandb.log({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})
+        print({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})
         
         # Find the index of the maximum loss
     loss_entropy= criterion_losses["CrossEntropy"]
