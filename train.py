@@ -116,28 +116,28 @@ def main(args):
         running_loss = 0.0
         model.train()
         # training loop
-        for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{num_epochs}"):
-            inputs = inputs.to(DEVICE)
-            # ignore labels that are not in test set 
-            target = target.long().squeeze()
-            target = map_id_to_train_id(target)
-            labels = target.to(DEVICE)
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+        # for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{num_epochs}"):
+        #     inputs = inputs.to(DEVICE)
+        #     # ignore labels that are not in test set 
+        #     target = target.long().squeeze()
+        #     target = map_id_to_train_id(target)
+        #     labels = target.to(DEVICE)
+        #     outputs = model(inputs)
+        #     loss = criterion(outputs, labels)
             
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        #     optimizer.zero_grad()
+        #     loss.backward()
+        #     optimizer.step()
 
-            running_loss += loss.detach().item()
-            # Delete variables to free up memory
-            del inputs, target, labels, outputs, loss
+        #     running_loss += loss.detach().item()
+        #     # Delete variables to free up memory
+        #     del inputs, target, labels, outputs, loss
 
-        epoch_loss = running_loss / len(train_loader)
+        # epoch_loss = running_loss / len(train_loader)
         
-        if verbose:
-            wandb.log({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
-            print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
+        # if verbose:
+        #     wandb.log({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
+        #     print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
             
             
         # validation loop
