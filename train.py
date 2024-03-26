@@ -199,7 +199,16 @@ def process_validation_performance(criterion_val_performance:dict):
     
     # Calculate the mean loss for each criterion
     # add jaccard index
-    dice_loss_per_class= mean(criterion_losses["Dice"],axis=0)
+    try:
+        dice_stack = torch.stack(criterion_losses["Dice"])
+        print(dice_stack.shape)
+        dice_loss_per_class= torch.mean(dice_stack["Dice"],dim=0)
+        print(dice_loss_per_class)
+        dice_loss_per_class= torch.mean(criterion_losses["Dice"],dim=0)
+        print(dice_loss_per_class)
+    except:
+        print("error")
+    # dice_loss_per_class= torch.mean(criterion_losses["Dice"],dim=0)
     for train_id, dice in enumerate(dice_loss_per_class):
         wandb.log({f"Dice_{train_id_to_name(train_id)}": round(dice,4)})
         print({f"Dice_{train_id_to_name(train_id)}": round(dice,4)})
