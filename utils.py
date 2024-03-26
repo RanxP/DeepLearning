@@ -1,3 +1,4 @@
+from cProfile import label
 from collections import namedtuple
 import torch
 
@@ -88,3 +89,11 @@ def map_id_to_train_id(label_id):
         # replace the value in the tensor with the train id if the value in the input tensor is equal to the id of the label
         train_id_tensor[label_id == label.id] = label.trainId
     return train_id_tensor
+
+def train_id_to_name(train_id:int):
+    """map the train id to the name of the label
+    input: Tensor of shape (batch_size, height, width) with values from 0 to 18
+    output: List of strings with the name of the label
+    """
+    label_names = {label.trainId: label.name if label.trainId != 19 else "None" for label in LABELS}
+    return label_names[train_id]

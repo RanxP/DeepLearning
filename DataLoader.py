@@ -23,14 +23,14 @@ IMG_SIZE = (512,1024)
 # color or gray scale transformations
 
 def TRANSFORM_STRUCTURE(img):
-    random.seed(torch.initial_seed())
-    img = transforms.RandomRotation(degrees=5)(img)
+    # random.seed(torch.initial_seed())
+    # img = transforms.RandomRotation(degrees=5)(img)
 
-    random.seed(torch.initial_seed())
-    # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
-    resize_factor =  random.uniform(0.5,1)
-    resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
-    img = transforms.RandomCrop(size=resized_img_size)(img)
+    # random.seed(torch.initial_seed())
+    # # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
+    # resize_factor =  random.uniform(0.5,1)
+    # resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
+    # img = transforms.RandomCrop(size=resized_img_size)(img)
 
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
 
@@ -41,16 +41,12 @@ TRANSFORM_STRUCTURE_VAL = transforms.Compose([
 ])
 
 TRANSFORM_IMAGE =  transforms.Compose([
-    # TRANSFORM_STRUCTURE + [
-    # data transformation
     transforms.PILToTensor(),
     transforms.ConvertImageDtype(torch.float32),
     transforms.Normalize(mean=CHANNEL_MEANS, std = CHANNEL_STDS)
     ])
 
 TRANSFORM_MASK =  transforms.Compose([
-    # TRANSFORM_STRUCTURE + [
-    # data transformation
     transforms.PILToTensor(),
 ])
 
@@ -90,17 +86,13 @@ def transform_dual_val(image, target):
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     
     trainset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
-                    #   transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
-                    transforms=transform_dual_train,
-                      target_type='semantic')
+                    transforms=transform_dual_train, target_type='semantic')
     
     train_subset, _ = torch.utils.data.random_split(trainset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
     
     valset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
-                    #   transform = TRANSFORM_IMAGE, target_transform=TRANSFORM_MASK,
-                    transforms=transform_dual_val,
-                      target_type='semantic')
+                    transforms=transform_dual_val, target_type='semantic')
     
     _, val_subset = torch.utils.data.random_split(valset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
