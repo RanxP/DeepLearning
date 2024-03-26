@@ -99,9 +99,9 @@ def main(args):
     print("model defined at ", dt.datetime.now())
     
     # criterion and optimizer for training
-    criterion = nn.CrossEntropyLoss(ignore_index=19)
+    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean').to(DEVICE)
     # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr).to(DEVICE)
     
     # creterion for validation
     criterion_val_dict = {"CrossEntropy": [nn.CrossEntropyLoss(ignore_index=19,reduction='mean'),False], 
