@@ -161,7 +161,10 @@ def main(args):
                     if one_chanel_prediction:
                         loss_value = criterion(argmax_outputs, labels).detach().cpu()
                     else:
+                        print(outputs.shape, labels.shape)
+                        print(outputs.unique(), labels.unique())
                         loss_value = criterion(outputs, labels).detach().item()
+                        print(loss_value)
                     criterion_val_performance['loss'][criterion_name].append(loss_value)
                 criterion_val_performance['outputs'].append(argmax_outputs.cpu())
                 criterion_val_performance['labels'].append(labels.cpu())
