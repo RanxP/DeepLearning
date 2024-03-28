@@ -36,7 +36,7 @@ def get_arg_parser():
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
     parser.add_argument("--workers", type=int, default=8, help="Path to save the model")
-    parser.add_argument("--number_of_epochs", type=int, default=1, help="nr of epochs in training")
+    parser.add_argument("--number_of_epochs", type=int, default=3, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
@@ -202,7 +202,7 @@ class ModelEvaluator:
             self.best_score = mean(loss_entropy)
             return False
             
-        if self.best_score < mean(loss_entropy):
+        if self.best_score > mean(loss_entropy):
             self.best_score = mean(loss_entropy)
             return True        
     

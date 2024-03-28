@@ -57,7 +57,7 @@ class Model(nn.Module):
 
 
 class conv_block(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c, out_c, dropout_rate=0.25):
         super().__init__()
 
         self.conv1 = nn.Conv2d(in_c, out_c, kernel_size=3, padding=1)
@@ -65,6 +65,8 @@ class conv_block(nn.Module):
 
         self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1)
         self.bn2 = nn.BatchNorm2d(out_c)
+        
+        self.dropout = nn.Dropout(dropout_rate)
 
         self.relu = nn.ReLU()
 
@@ -76,6 +78,7 @@ class conv_block(nn.Module):
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
+        x = self.dropout(x)
 
         return x
 
