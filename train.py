@@ -2,15 +2,12 @@
 This file needs to contain the main training loop. The training code should be encapsulated in a main() function to
 avoid any global variables.
 """
-from ast import arg, parse
 import os
 import time
 import datetime as dt
 from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
 
-from matplotlib import axis
-from zmq import has
 
 from model import Model
 import torch
@@ -20,7 +17,7 @@ import torch.optim as optim
 from torchmetrics.classification import Dice, MulticlassJaccardIndex,MulticlassF1Score
 
 import wandb
-from numpy import argmax, dtype, mean, save
+from numpy import mean
 from tqdm import tqdm
 
 
