@@ -80,14 +80,10 @@ def main(args):
     _print_quda_info
     
     train_loader, val_loader = generate_data_loaders(args)
-    
-    # visualize example images
 
     # define model
     model = Model().init_weights()
     model = model.to(DEVICE)
-    # if not args.cloud_exec:
-        # model = _hot_load_model(model, Path("model/model.pt"))
 
     # define optimizer and loss function (don't forget to ignore class index 255)
     # todo convert to grid optimizer
@@ -97,9 +93,12 @@ def main(args):
     print("model defined at ", dt.datetime.now())
     
     # criterion and optimizer for training
-    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean').to(DEVICE)
+    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
+    # extra for insight
+    dice = MulticlassF1Score(average=None,num_classes=20,ignore_index=19)
     # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    
     
     # creterion for validation
     criterion_val_dict = {"CrossEntropy": [nn.CrossEntropyLoss(ignore_index=19,reduction='mean'),False], 
@@ -117,6 +116,8 @@ def main(args):
         torch.cuda.empty_cache()
         model.to(DEVICE)
         criterion.to(DEVICE)
+        dice.to(DEVICE)
+        dice_losses = []
 
         running_loss = 0.0
         model.train()
@@ -135,14 +136,17 @@ def main(args):
             optimizer.step()
 
             running_loss += loss.detach().item()
+            # logg dice los of epoch
+            dice_losses.append(dice(outputs,labels).detach().cpu())
+            
             # Delete variables to free up memory
             del inputs, target, labels, outputs, loss
 
         epoch_loss = running_loss / len(train_loader)
-        
         if verbose:
-            wandb.log({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
+            wandb.log({"train": {"Epoch": (epoch + 1)/num_epochs, "CrossEntropy Loss": round(epoch_loss,4)}})
             print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
+            log_dice_loss(dice_losses,"train")
             
         # clean cache
         torch.cuda.empty_cache()
@@ -221,19 +225,11 @@ def process_validation_performance(criterion_val_performance:dict):
     
     # Calculate the mean loss for each criterion
     # add jaccard index
-    dice_stack = torch.stack(criterion_losses["Dice"])
-    dice_loss_per_class= torch.mean(dice_stack,dim=0)
-    try:
-        wandb.log({"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)})
-    except Exception as e: 
-        print(f"Error in Dice logging:{e}")
-    for train_id, dice in enumerate(dice_loss_per_class):
-        wandb.log({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})
-        print({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})
-        
-        # Find the index of the maximum loss
+    log_dice_loss(criterion_losses["Dice"],"val")
+    
+    # Find the index of the maximum loss
     loss_entropy= criterion_losses["CrossEntropy"]
-    wandb.log({"CrossEntropy mean Loss": round(mean(loss_entropy),4)})
+    wandb.log({"val":{"CrossEntropy Loss": round(mean(loss_entropy),4)}})
     
     max_loss_index = loss_entropy.index(max(loss_entropy))
 
@@ -244,6 +240,16 @@ def process_validation_performance(criterion_val_performance:dict):
     
     visualize_criterion(baseline=max_loss_label, prediction=max_loss_output, 
                         loss=max(loss_entropy), criterion_name="CrossEntropy")
+    
+def log_dice_loss(list_of_losses, wandb_group:str="train"):
+    dice_stack = torch.stack(list_of_losses)
+    dice_loss_per_class= torch.mean(dice_stack,dim=0)
+    wandb.log({f"{wandb_group}":{"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)}})
+    print({"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)})
+    
+    for train_id, dice in enumerate(dice_loss_per_class):
+        wandb.log({f"{wandb_group}":{f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)}})
+        
 
 if __name__ == "__main__":
     # Get the arguments
