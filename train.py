@@ -10,6 +10,7 @@ from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
 
 from matplotlib import axis
+from zmq import has
 
 from model import Model
 import torch
@@ -19,7 +20,7 @@ import torch.optim as optim
 from torchmetrics.classification import Dice, MulticlassJaccardIndex,MulticlassF1Score
 
 import wandb
-from numpy import argmax, dtype, mean
+from numpy import argmax, dtype, mean, save
 from tqdm import tqdm
 
 
@@ -107,6 +108,8 @@ def main(args):
     criterion_val_dict = {"CrossEntropy": [nn.CrossEntropyLoss(ignore_index=19,reduction='mean'),False], 
                         "Dice": [MulticlassF1Score(average=None,num_classes=20,ignore_index=19),True],
                         "JaccardIndex": [MulticlassJaccardIndex(num_classes=20,ignore_index=19, average="macro"),True]}
+    # save model checkpoint 
+    ME = ModelEvaluator()
 
     print("criterion and optimizer defined at ", dt.datetime.now())
     # log model and criterion
@@ -177,26 +180,40 @@ def main(args):
                 criterion_val_performance['labels'].append(labels.cpu())
                 
                 # Later, when logging or printing:
-            if verbose:
-                process_validation_performance(criterion_val_performance)
-                        
-
-    # save model
+            
+            process_validation_performance(criterion_val_performance)
+            # save checkpoint if performance is better
+            if (epoch + 1)/num_epochs > 0.75:
+                if ME.best_performace(criterion_val_performance['loss']):
+                    save_model(model, args, f"best_performance")
+    
+    save_model(model, args, "final")
+        
+    # visualize some results
+    print("Finished at ", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    
+class ModelEvaluator:
+    
+    def best_performace(self,criterion_losses) -> bool:
+        
+        loss_entropy= criterion_losses["CrossEntropy"]
+        if not hasattr(self, "best_score"):
+            self.best_score = mean(loss_entropy)
+            return False
+            
+        if self.best_score < mean(loss_entropy):
+            self.best_score = mean(loss_entropy)
+            return True        
+    
+def save_model(model, args, name_parameter:str):
     model_dir = os.path.join(os.getcwd(), args.model_path)
     os.makedirs(model_dir, exist_ok=True)
 
     # Create a timestamp for the saved model
-    timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H:%M')
-    model_filename = f"/model_{timestamp}.pth"
-
-    # Create the full path for the saved model
-    model_path = os.path.join(model_dir, model_filename)
+    model_filename = f"/model_{name_parameter}_{wandb.run._run_id}.pth"
 
     # Save the model
     torch.save(model.state_dict(), model_dir + model_filename)
-
-    # visualize some results
-    print("Finished at ", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 
 def process_validation_performance(criterion_val_performance:dict):
@@ -210,9 +227,9 @@ def process_validation_performance(criterion_val_performance:dict):
     dice_stack = torch.stack(criterion_losses["Dice"])
     dice_loss_per_class= torch.mean(dice_stack,dim=0)
     try:
-        wandb.log({"mean Dice Loss": round(torch.mean(dice_loss_per_class),4)})
-    except: 
-        print("Error in Dice logging")
+        wandb.log({"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)})
+    except Exception as e: 
+        print(f"Error in Dice logging:{e}")
     for train_id, dice in enumerate(dice_loss_per_class):
         wandb.log({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})
         print({f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)})

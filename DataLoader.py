@@ -23,14 +23,14 @@ IMG_SIZE = (512,1024)
 # color or gray scale transformations
 
 def TRANSFORM_STRUCTURE(img):
-    # random.seed(torch.initial_seed())
-    # img = transforms.RandomRotation(degrees=5)(img)
+    random.seed(torch.initial_seed())
+    img = transforms.RandomRotation(degrees=3)(img)
 
-    # random.seed(torch.initial_seed())
-    # # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
-    # resize_factor =  random.uniform(0.5,1)
-    # resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
-    # img = transforms.RandomCrop(size=resized_img_size)(img)
+    random.seed(torch.initial_seed())
+    # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
+    resize_factor =  random.uniform(0.8,1.2)
+    resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
+    img = transforms.RandomCrop(size=resized_img_size)(img)
 
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
 
@@ -102,9 +102,7 @@ def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.util
                                             drop_last=True)
     valloader = torch.utils.data.DataLoader(val_subset, batch_size=args.batch_size,
                                             shuffle=True, num_workers=args.workers,
-                                            drop_last=True)
-    wandb.log({"Data Loaded":dt.datetime.now()})
-    
+                                            drop_last=True)    
     
     return trainloader, valloader
 
