@@ -98,14 +98,14 @@ def main(args):
     
     # Define loss criteria to be used
     cross_entropy = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
-    # dice_weighted = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
+    dice_weighted = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
     # extra loss function to visualize training
     dice = MulticlassF1Score(average=None,num_classes=20,ignore_index=19)
     # criterion and optimizer for training
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     # optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
-    
+    criterion = dice_weighted
+    wandb.log({"criterion": criterion, "optimizer": "sgd"})
     
     # creterion for validation
     criterion_val_dict = {"CrossEntropy": [nn.CrossEntropyLoss(ignore_index=19,reduction='mean'),False], 
@@ -136,7 +136,7 @@ def main(args):
             target = map_id_to_train_id(target)
             labels = target.to(DEVICE)
             outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            loss =- criterion(outputs, labels)
             loss.requires_grad = True
             
             optimizer.zero_grad()
