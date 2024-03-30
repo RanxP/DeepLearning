@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchmetrics.classification import Dice, MulticlassJaccardIndex,MulticlassF1Score
+from torchmetrics.classification import MulticlassJaccardIndex, MulticlassF1Score
 
 import wandb
 from numpy import mean
@@ -46,6 +46,8 @@ def get_arg_parser():
     parser.add_argument("--TRANSFORM_STRUCTURE_VAL", type= list, default=TRANSFORM_STRUCTURE_VAL, help="Validation transformation")
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
     parser.add_argument("--TRANSFORM_MASK", type= list, default=TRANSFORM_MASK, help="Mask transformation")
+    
+    parser.add_argument("--dropout_rate", type=float, default=0.0, help="Dropout rate for the model")
     
     
     return parser
@@ -83,6 +85,7 @@ def main(args):
 
     # define model
     model = Model().init_weights()
+    # torch.compile(model)
     model = model.to(DEVICE)
 
     # define optimizer and loss function (don't forget to ignore class index 255)
@@ -92,12 +95,16 @@ def main(args):
     verbose = args.verbose
     print("model defined at ", dt.datetime.now())
     
-    # criterion and optimizer for training
-    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
-    # extra for insight
+    
+    # Define loss criteria to be used
+    cross_entropy = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
+    # dice_weighted = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
+    # extra loss function to visualize training
     dice = MulticlassF1Score(average=None,num_classes=20,ignore_index=19)
-    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    # criterion and optimizer for training
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    # optimizer = optim.Adam(model.parameters(), lr=lr)
+    criterion = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
     
     
     # creterion for validation
@@ -130,6 +137,7 @@ def main(args):
             labels = target.to(DEVICE)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
+            loss.requires_grad = True
             
             optimizer.zero_grad()
             loss.backward()
@@ -144,7 +152,7 @@ def main(args):
 
         epoch_loss = running_loss / len(train_loader)
         if verbose:
-            wandb.log({"train": {"Epoch": (epoch + 1)/num_epochs, "CrossEntropy Loss": round(epoch_loss,4)}})
+            wandb.log({"train": {"Epoch": (epoch + 1)/num_epochs, "Weighted Dice Loss": round(epoch_loss,4)}})
             print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
             log_dice_loss(dice_losses,"train")
             
