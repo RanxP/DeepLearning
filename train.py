@@ -98,13 +98,13 @@ def main(args):
     
     # Define loss criteria to be used
     cross_entropy = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
-    dice_weighted = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
+    # dice_weighted = MulticlassF1Score(average='weighted',num_classes=20,ignore_index=19)
     # extra loss function to visualize training
     dice = MulticlassF1Score(average=None,num_classes=20,ignore_index=19)
     # criterion and optimizer for training
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     # optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = dice_weighted
+    criterion = cross_entropy
     wandb.log({"criterion": criterion, "optimizer": "sgd"})
     
     # creterion for validation
@@ -136,8 +136,7 @@ def main(args):
             target = map_id_to_train_id(target)
             labels = target.to(DEVICE)
             outputs = model(inputs)
-            loss =- criterion(outputs, labels)
-            loss.requires_grad = True
+            loss = criterion(outputs, labels)
             
             optimizer.zero_grad()
             loss.backward()
@@ -152,7 +151,7 @@ def main(args):
 
         epoch_loss = running_loss / len(train_loader)
         if verbose:
-            wandb.log({"train": {"Epoch": (epoch + 1)/num_epochs, "Weighted Dice Loss": round(epoch_loss,4)}})
+            wandb.log({"train": {"Epoch": (epoch + 1)/num_epochs, "CrossEntropy Loss": round(epoch_loss,4)}})
             print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
             log_dice_loss(dice_losses,"train")
             
@@ -180,10 +179,7 @@ def main(args):
                     if one_chanel_prediction:
                         loss_value = criterion_val(argmax_outputs, labels).detach().cpu()
                     else:
-                        # print(outputs.shape, labels.shape)
-                        # print(outputs.unique(), labels.unique())
                         loss_value = criterion_val(outputs, labels).detach().item()
-                        # print(loss_value)
                     criterion_val_performance['loss'][criterion_name].append(loss_value)
                 criterion_val_performance['outputs'].append(argmax_outputs.cpu())
                 criterion_val_performance['labels'].append(labels.cpu())
