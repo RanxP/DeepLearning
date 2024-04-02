@@ -71,9 +71,8 @@ def get_arg_parser():
     
     return parser
 
-def load_encoder_weights(encoder,model_path):
-    models_dir = os.path.join(os.getcwd(), "model")
-    full_model_path = os.path.join(model_path, models_dir)
+def load_encoder_weights(encoder,model_file:str):
+    full_model_path = os.path.join(os.getcwd(), "model", model_file)
     pretrained_dict = (torch.load(full_model_path))
     model_dict = encoder.state_dict()
         # 1. filter out unnecessary keys
