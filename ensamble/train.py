@@ -72,7 +72,8 @@ def get_arg_parser():
     return parser
 
 def load_encoder_weights(encoder,model_path):
-    full_model_path = os.path.join(os.getcwd(), model_path)
+    models_dir = os.path.join(os.getcwd(), "model")
+    full_model_path = os.path.join(model_path, models_dir)
     pretrained_dict = (torch.load(full_model_path))
     model_dict = encoder.state_dict()
         # 1. filter out unnecessary keys
@@ -92,7 +93,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    load_encoder_weights(encoder, "model\model_best_performance_quijfmub.pth")
+    load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
 
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
