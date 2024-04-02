@@ -143,7 +143,7 @@ def main(args):
                 loss.backward()
                 optimizers[i].step()
                 
-                dice_losses.append(dice(output,decoder_specific_lables).detach().cpu())
+                dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                 
                 
                 
@@ -171,8 +171,8 @@ def main(args):
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
             # print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
             log_dice_loss(dice_losses,"train")
-            for i, dice_loss in enumerate(dice_losses):
-                log_dice_loss(dice_decoder_losses[i],f"train_decoder_{classes_to_ignore[i]}")
+            for i, dice_loss in enumerate(dice_decoder_losses):
+                log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
             
         # clean cache
         # torch.cuda.empty_cache()
