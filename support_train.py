@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from numpy import mean
 from torchmetrics.classification import MulticlassJaccardIndex, MulticlassF1Score
 
 import wandb
