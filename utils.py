@@ -97,3 +97,13 @@ def train_id_to_name(train_id:int):
     """
     label_names = {label.trainId: label.name if label.trainId != 19 else "None" for label in LABELS}
     return label_names[train_id]
+
+def remove_classes_from_tensor(tensor, classes):
+    """remove the classes from the tensor
+    input: Tensor of shape (batch_size, height, width) with values from 0 to 19
+    output: Tensor of shape (batch_size, height, width) with values from 0 to 19 
+    """
+    new_tensor = tensor.clone()
+    for c in classes:
+        new_tensor[new_tensor == c] = 19
+    return new_tensor
