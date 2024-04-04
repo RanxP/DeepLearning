@@ -101,7 +101,7 @@ def main(args):
     model = model.to(DEVICE)
     
     # Define loss criteria to be used
-    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean')
+    criterion = nn.CrossEntropyLoss(ignore_index=19,reduction='mean').to(DEVICE)
     dice = MulticlassF1Score(average=None,num_classes=20,ignore_index=19).to(DEVICE)
     # crcriterioneterion for validation
     criterion_val_dict = {"CrossEntropy": [nn.CrossEntropyLoss(ignore_index=19,reduction='mean'),False], 
@@ -114,8 +114,6 @@ def main(args):
     for epoch in range(wandb.config.number_of_epochs):
         # clean cache
         torch.cuda.empty_cache()
-        model.to(DEVICE)
-        criterion.to(DEVICE)
 
         running_loss = 0.0
         dice_decoder_losses = [[],[],[]]
@@ -156,12 +154,12 @@ def main(args):
             target = target.to(DEVICE)
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
 
-            ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
+            # ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
             
             # logg dice los of epoch
             
             # Delete variables to free up memory
-            del inputs, target, decoder_specific_lables, outputs, loss
+            del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
             
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
