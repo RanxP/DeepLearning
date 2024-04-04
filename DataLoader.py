@@ -22,15 +22,14 @@ CHANNEL_STDS = [0.229, 0.224, 0.225]
 
 def TRANSFORM_STRUCTURE(img):
     IMG_SIZE = [2**wandb.config.figure_size,2**(wandb.config.figure_size+1)]
-    print(IMG_SIZE)
-    random.seed(torch.initial_seed())
-    img = transforms.RandomRotation(degrees=3)(img)
+    # random.seed(torch.initial_seed())
+    # img = transforms.RandomRotation(degrees=3)(img)
 
-    random.seed(torch.initial_seed())
-    # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
-    resize_factor =  random.uniform(0.8,1.2)
-    resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
-    img = transforms.RandomCrop(size=resized_img_size)(img)
+    # random.seed(torch.initial_seed())
+    # # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
+    # resize_factor =  random.uniform(0.8,1.2)
+    # resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
+    # img = transforms.RandomCrop(size=resized_img_size)(img)
 
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
 
@@ -67,9 +66,8 @@ class RandomTransformsDual:
         return img, target
 
 def transform_dual_train(image, target):
-    # image, target = instance
-    # transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
-    # image, target = transform(image, target)
+    transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
+    image, target = transform(image, target)
 
     image = TRANSFORM_IMAGE(image)
     target = TRANSFORM_MASK(target)
