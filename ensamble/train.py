@@ -109,6 +109,7 @@ def main(args):
 
     # log model and criterion
     wandb.watch(model,criterion,log="all",log_freq=50)
+    min_dice_loss = 0
     # training/validation loop
     for epoch in range(wandb.config.number_of_epochs):
         # clean cache
@@ -131,7 +132,6 @@ def main(args):
             # multiple outputs 
             for i, output in enumerate(outputs):
                 total_loss = 0
-                print(output.shape)
                 output = output.to(DEVICE)
                 # convert abels to exclude classes
                 decoder_specific_lables = remove_classes_from_tensor(target, classes_to_ignore[i])
@@ -165,8 +165,13 @@ def main(args):
             
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
-            # print({"Epoch": (epoch + 1)/num_epochs, "Loss": round(epoch_loss,4)})
-            log_dice_loss(dice_losses,"train")
+
+            mean_dice_loss = log_dice_loss(dice_losses,"train")
+            if mean_dice_loss > min_dice_loss:
+                min_dice_loss = mean_dice_loss
+                save_model(model, args, f"best_performance")
+                # save_model(model, args, f"best_performance_epoch_{epoch+1}")
+
             for i, dice_loss in enumerate(dice_decoder_losses):
                 log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
             

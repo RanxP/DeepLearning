@@ -64,11 +64,14 @@ def process_validation_performance(criterion_val_performance:dict):
 def log_dice_loss(list_of_losses, wandb_group:str="train"):
     dice_stack = torch.stack(list_of_losses)
     dice_loss_per_class= torch.mean(dice_stack,dim=0)
-    wandb.log({f"{wandb_group}":{"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)}})
+    mean_dice_loss = torch.mean(dice_loss_per_class).item()
+    wandb.log({f"{wandb_group}":{"mean Dice Loss": round(mean_dice_loss,4)}})
     print({"mean Dice Loss": round(torch.mean(dice_loss_per_class).item(),4)})
     
     for train_id, dice in enumerate(dice_loss_per_class):
         wandb.log({f"{wandb_group}":{f"Dice_{train_id_to_name(train_id)}": round(dice.item(),4)}})
+        
+    return mean_dice_loss
         
         
 class ModelEvaluator:
