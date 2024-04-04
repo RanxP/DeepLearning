@@ -60,7 +60,7 @@ def get_arg_parser():
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
     
-    parser.add_argument("--figure_size", type=tuple[int,int], default=IMG_SIZE, help="Width of the figure in pixels")
+    parser.add_argument("--figure_size", type=int, default=8, help="height of the figure in pixels described in the power of 2")
     parser.add_argument("--TRANSFORM_STRUCTURE", type= list, default=[TRANSFORM_STRUCTURE], help="Training transformation")
     parser.add_argument("--TRANSFORM_STRUCTURE_VAL", type= list, default=TRANSFORM_STRUCTURE_VAL, help="Validation transformation")
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
@@ -145,8 +145,6 @@ def main(args):
                 
                 dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                 
-                
-                
                 total_loss += loss.item()
             
             
@@ -155,12 +153,10 @@ def main(args):
             
             outputs_tensor = torch.stack(outputs)
             mean_outputs = torch.mean(outputs_tensor, dim=0, keepdim=False).to(DEVICE)
-            print(mean_outputs.shape)
             target = target.to(DEVICE)
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
 
             ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
-            print(ensamble_output.shape)
             
             # logg dice los of epoch
             

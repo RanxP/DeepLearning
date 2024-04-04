@@ -14,15 +14,15 @@ import random
 CHANNEL_MEANS = [0.485, 0.456, 0.406]
 CHANNEL_STDS = [0.229, 0.224, 0.225]
 
-IMG_SIZE = (512,1024)
 
-# ideas 5 crop
 # perspective transform
 #rotation 10 % each direction
 
 # color or gray scale transformations
 
 def TRANSFORM_STRUCTURE(img):
+    IMG_SIZE = [2**wandb.config.figure_size,2**(wandb.config.figure_size+1)]
+    print(IMG_SIZE)
     random.seed(torch.initial_seed())
     img = transforms.RandomRotation(degrees=3)(img)
 
@@ -36,9 +36,10 @@ def TRANSFORM_STRUCTURE(img):
 
     return img
 
-TRANSFORM_STRUCTURE_VAL = transforms.Compose([
-    transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
-])
+def TRANSFORM_STRUCTURE_VAL(img):
+    IMG_SIZE = [2**wandb.config.figure_size,2**(wandb.config.figure_size+1)]
+    img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
+    return img
 
 TRANSFORM_IMAGE =  transforms.Compose([
     transforms.PILToTensor(),
@@ -67,8 +68,8 @@ class RandomTransformsDual:
 
 def transform_dual_train(image, target):
     # image, target = instance
-    transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
-    image, target = transform(image, target)
+    # transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
+    # image, target = transform(image, target)
 
     image = TRANSFORM_IMAGE(image)
     target = TRANSFORM_MASK(target)
