@@ -127,7 +127,6 @@ def main(args):
             target = target.long().squeeze()
             target = map_id_to_train_id(target)
             outputs = model(inputs)
-            print(outputs.shape)
             dice_losses = []
             # multiple outputs 
             for i, output in enumerate(outputs):
@@ -150,8 +149,8 @@ def main(args):
             
             running_loss += total_loss / 3
             print(running_loss)
-            torch.save(outputs, "outputs.pt")
             outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
+            torch.save(outputs_tensor, "outputs.pt")
             print(outputs_tensor.shape)
             normalized_outputs = F.softmax(outputs_tensor, dim=2)
             print(normalized_outputs.shape)
