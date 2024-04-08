@@ -20,8 +20,7 @@ CHANNEL_STDS = [0.229, 0.224, 0.225]
 
 # color or gray scale transformations
 
-def TRANSFORM_STRUCTURE(img):
-    IMG_SIZE = [2**wandb.config.figure_size,2**(wandb.config.figure_size+1)]
+def TRANSFORM_STRUCTURE(img, IMG_SIZE):
     # random.seed(torch.initial_seed())
     # img = transforms.RandomRotation(degrees=3)(img)
 
@@ -31,12 +30,12 @@ def TRANSFORM_STRUCTURE(img):
     # resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
     # img = transforms.RandomCrop(size=resized_img_size)(img)
 
+    # manditory resize
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
 
     return img
 
-def TRANSFORM_STRUCTURE_VAL(img):
-    IMG_SIZE = [2**wandb.config.figure_size,2**(wandb.config.figure_size+1)]
+def TRANSFORM_STRUCTURE_VAL(img, IMG_SIZE):
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
     return img
 
@@ -51,47 +50,54 @@ TRANSFORM_MASK =  transforms.Compose([
 ])
 
 class RandomTransformsDual:
-    def __init__(self, transform):
+    def __init__(self, transform,IMG_SIZE):
         self.transform = transform
+        self.IMG_SIZE = IMG_SIZE
 
     def __call__(self, img, target):
         seed = np.random.randint(2147483647)
         torch.manual_seed(seed=seed)
-        img = self.transform(img)
+        img = self.transform(img,self.IMG_SIZE)
         torch.manual_seed(seed=seed)
-        target = self.transform(target)
+        target = self.transform(target,self.IMG_SIZE)
         #release the manual seed
         torch.seed()
 
         return img, target
+    
+class TransformDualInputCollection:
+    def __init__(self, IMG_SIZE):
+        self.IMG_SIZE = IMG_SIZE
 
-def transform_dual_train(image, target):
-    transform = RandomTransformsDual(TRANSFORM_STRUCTURE)
-    image, target = transform(image, target)
+    def transform_dual_train(image, target):
+        transform = RandomTransformsDual(TRANSFORM_STRUCTURE,self.IMG_SIZE)
+        image, target = transform(image, target)
 
-    image = TRANSFORM_IMAGE(image)
-    target = TRANSFORM_MASK(target)
+        image = TRANSFORM_IMAGE(image)
+        target = TRANSFORM_MASK(target)
 
-    return image, target
+        return image, target
 
-def transform_dual_val(image, target):
-    image = TRANSFORM_STRUCTURE_VAL(image)
-    target = TRANSFORM_STRUCTURE_VAL(target)
-    image = TRANSFORM_IMAGE(image)
-    target = TRANSFORM_MASK(target)
+    def transform_dual_val(image, target):
+        image = TRANSFORM_STRUCTURE_VAL(image, self.IMG_SIZE)
+        target = TRANSFORM_STRUCTURE_VAL(target, self.IMG_SIZE)
+        image = TRANSFORM_IMAGE(image)
+        target = TRANSFORM_MASK(target)
 
-    return image, target
+        return image, target
 
 def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    IMG_SIZE = [2**args.figure_size,2**(args.figure_size+1)]
+    transform_collection = TransformDualInputCollection(IMG_SIZE)
     
     trainset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
-                    transforms=transform_dual_train, target_type='semantic')
+                    transforms=transform_collection.transform_dual_train, target_type='semantic')
     
     train_subset, _ = torch.utils.data.random_split(trainset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
     
     valset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
-                    transforms=transform_dual_val, target_type='semantic')
+                    transforms=transform_collection.transform_dual_val, target_type='semantic')
     
     _, val_subset = torch.utils.data.random_split(valset, [0.8, 0.2],
                                             generator=torch.Generator().manual_seed(1))
