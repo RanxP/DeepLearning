@@ -177,8 +177,8 @@ def main(args):
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
             # get the normalized outputs for the unknown classes
             # Get the indices of the known and unknown classes
-            known_indices = (target != 19).unsqueeze(-1).expand_as(mean_outputs)
-            unknown_indices = (target == 19).unsqueeze(-1).expand_as(mean_outputs)
+            known_indices = (target != 19).unsqueeze(-1).permute(0,3,1,2).expand_as(mean_outputs)
+            unknown_indices = (target == 19).unsqueeze(-1).permute(0,3,1,2).expand_as(mean_outputs)
 
             # Compute the mean activation of the known and unknown classes
             known_classes_activation = torch.mean(mean_outputs[known_indices]).item()
