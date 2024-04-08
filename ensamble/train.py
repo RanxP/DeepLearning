@@ -9,6 +9,7 @@ import datetime as dt
 from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
 
+from matplotlib import pyplot as plt
 from numpy import var
 
 
@@ -123,7 +124,11 @@ def main(args):
         dice_decoder_losses = [[],[],[]]
         model.train()
         # training loop
-        for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
+        
+        #
+        total_known_classes_activation = []
+        total_unknown_classes_activation = []
+        for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
             inputs = inputs.to(DEVICE)
             # ignore labels that are not in test set 
             target = target.long().squeeze()
@@ -154,25 +159,30 @@ def main(args):
             outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
             torch.save(outputs_tensor, "outputs.pt")
             normalized_outputs = F.softmax(outputs_tensor, dim=2)
-            print(normalized_outputs[0,0,:,0,0])
-            print(normalized_outputs[0,1,:,0,0])
-            print(normalized_outputs[0,2,:,0,0])
+            # print(normalized_outputs[0,0,:,0,0])
+            # print(normalized_outputs[0,1,:,0,0])
+            # print(normalized_outputs[0,2,:,0,0])
             mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
-            print("Mean outputs")
-            print(mean_outputs[0,:,0,0])
+            # print("Mean outputs")
+            # print(mean_outputs[0,:,0,0])
             var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
-            print("Var outputs")
-            print(var_outputs[0,:,0,0])
+            # print("Var outputs")
+            # print(var_outputs[0,:,0,0])
             ensamble_output = torch.argmax(input=mean_outputs,dim=1)
-            print("Ensamble output")
-            print(ensamble_output[0,0,0])
-            print("Target")
-            print(target[0,0,0])
+            # print("Ensamble output")
+            # print(ensamble_output[0,0,0])
+            # print("Target")
+            # print(target[0,0,0])
             target = target.to(DEVICE)
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
-
-
-            # logg dice los of epoch
+            # get the normalized outputs for the unknown classes
+            unknown_classes_activation = torch.mean(torch.where(target == 19, mean_outputs)).item()
+            known_classes_activation = torch.mean(torch.where(target != 19, mean_outputs)).item()
+            total_known_classes_activation.append(known_classes_activation)
+            total_unknown_classes_activation.append(unknown_classes_activation)
+            # print the mean known and unknown classes activation
+            print(f"Mean known classes activation: {sum(total_known_classes_activation)/len(total_known_classes_activation)}")
+            print(f"Mean unknown classes activation: {sum(total_unknown_classes_activation)/len(total_unknown_classes_activation)}")
             
             # Delete variables to free up memory
             del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
@@ -188,6 +198,14 @@ def main(args):
 
             for i, dice_loss in enumerate(dice_decoder_losses):
                 log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
+            
+        # visualize distributions of activations
+        fig, ax = plt.subplots(2,1)
+        ax[0].hist(total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
+        ax[1].hist(total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
+        ax[0].legend()
+        ax[1].legend()
+        fig.savefig("activation_epoch.png")
             
         # clean cache
         # torch.cuda.empty_cache()
