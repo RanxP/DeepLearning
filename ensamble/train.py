@@ -23,10 +23,10 @@ from tqdm import tqdm
 import sys
 sys.path.insert(0, os.getcwd())
 
-from DataLoader import * # , calculate_mean
+from DataLoader import *
 from utils import LABELS, map_id_to_train_id, train_id_to_name, remove_classes_from_tensor
 from DataVisualizations import visualize_criterion
-from support_train import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
+from train_utils import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
 
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -54,14 +54,14 @@ def get_arg_parser():
     """add more arguments here and change the default values to your needs in the run_container.sh file"""
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
-    parser.add_argument("--workers", type=int, default=8, help="Path to save the model")
+    parser.add_argument("--workers", type=int, default=6, help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=3, help="nr of epochs in training")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for training")
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
     
     parser.add_argument("--figure_size", type=int, default=8, help="height of the figure in pixels described in the power of 2")
-    parser.add_argument("--TRANSFORM_STRUCTURE", type= list, default=[TRANSFORM_STRUCTURE], help="Training transformation")
+    parser.add_argument("--TRANSFORM_STRUCTURE", type= list, default=TRANSFORM_STRUCTURE, help="Training transformation")
     parser.add_argument("--TRANSFORM_STRUCTURE_VAL", type= list, default=TRANSFORM_STRUCTURE_VAL, help="Validation transformation")
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
     parser.add_argument("--TRANSFORM_MASK", type= list, default=TRANSFORM_MASK, help="Mask transformation")
@@ -83,10 +83,11 @@ def load_encoder_weights(encoder,model_file:str):
     encoder.load_state_dict(pretrained_dict)
 
 
+
 def main(args):
     """define your model, trainingsloop optimitzer etc. here"""
     _init_wandb(args)
-    _print_quda_info
+    _print_quda_info(DEVICE=DEVICE)
     
     train_loader, val_loader = generate_data_loaders(args)
 
@@ -96,6 +97,7 @@ def main(args):
 
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
+    load_encoder_weights(model, "model_final_vhb12qyp.pth")
     model.freeze_encoder()
     # torch.compile(model)
     model = model.to(DEVICE)
@@ -125,7 +127,7 @@ def main(args):
             target = target.long().squeeze()
             target = map_id_to_train_id(target)
             outputs = model(inputs)
-            # print(outputs.shape)
+            print(outputs.shape)
             dice_losses = []
             # multiple outputs 
             for i, output in enumerate(outputs):
@@ -148,13 +150,17 @@ def main(args):
             
             running_loss += total_loss / 3
             print(running_loss)
-            
-            outputs_tensor = torch.stack(outputs)
+            torch.save(outputs, "outputs.pt")
+            outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
+            print(outputs_tensor.shape)
+            normalized_outputs = F.softmax(outputs_tensor, dim=2)
+            print(normalized_outputs.shape)
+            print(normalized_outputs[0,0,:,0,0])
             mean_outputs = torch.mean(outputs_tensor, dim=0, keepdim=False).to(DEVICE)
             target = target.to(DEVICE)
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
 
-            # ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
+            ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
             
             # logg dice los of epoch
             

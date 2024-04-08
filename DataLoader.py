@@ -69,7 +69,7 @@ class TransformDualInputCollection:
     def __init__(self, IMG_SIZE):
         self.IMG_SIZE = IMG_SIZE
 
-    def transform_dual_train(image, target):
+    def transform_dual_train(self,image, target):
         transform = RandomTransformsDual(TRANSFORM_STRUCTURE,self.IMG_SIZE)
         image, target = transform(image, target)
 
@@ -78,7 +78,7 @@ class TransformDualInputCollection:
 
         return image, target
 
-    def transform_dual_val(image, target):
+    def transform_dual_val(self,image, target):
         image = TRANSFORM_STRUCTURE_VAL(image, self.IMG_SIZE)
         target = TRANSFORM_STRUCTURE_VAL(target, self.IMG_SIZE)
         image = TRANSFORM_IMAGE(image)
