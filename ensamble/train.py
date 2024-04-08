@@ -185,8 +185,8 @@ def main(args):
             print(unknown_indices[0])
 
             # Compute the mean activation of the known and unknown classes
-            activation_score_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1)
-            activation_score_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
+            activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1)
+            activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
             print(activation_score_per_image)
             known_classes_activation = torch.mean(activation_score_per_image).item()
             unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
