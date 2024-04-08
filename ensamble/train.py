@@ -177,12 +177,19 @@ def main(args):
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
             # get the normalized outputs for the unknown classes
             # Get the indices of the known and unknown classes
-            known_indices = (target != 19).unsqueeze(-1).permute(0,3,1,2).expand_as(mean_outputs)
-            unknown_indices = (target == 19).unsqueeze(-1).permute(0,3,1,2).expand_as(mean_outputs)
+            known_indices = (target != 19)
+            unknown_indices = (target == 19)
+            print(known_indices.shape)
+            print(unknown_indices.shape)
+            print(known_indices[0])
+            print(unknown_indices[0])
 
             # Compute the mean activation of the known and unknown classes
-            known_classes_activation = torch.mean(mean_outputs[known_indices]).item()
-            unknown_classes_activation = torch.mean(mean_outputs[unknown_indices]).item()
+            activation_score_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1)
+            activation_score_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
+            print(activation_score_per_image)
+            known_classes_activation = torch.mean(activation_score_per_image).item()
+            unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
             
             total_known_classes_activation.append(known_classes_activation)
             total_unknown_classes_activation.append(unknown_classes_activation)
