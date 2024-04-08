@@ -9,6 +9,8 @@ import datetime as dt
 from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
 
+from numpy import var
+
 
 from ensamble_model import EnsambleModel, standalone_decoder, pre_trained_encoder
 import torch
@@ -151,16 +153,25 @@ def main(args):
             print(running_loss)
             outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
             torch.save(outputs_tensor, "outputs.pt")
-            print(outputs_tensor.shape)
             normalized_outputs = F.softmax(outputs_tensor, dim=2)
-            print(normalized_outputs.shape)
             print(normalized_outputs[0,0,:,0,0])
-            mean_outputs = torch.mean(outputs_tensor, dim=0, keepdim=False).to(DEVICE)
+            print(normalized_outputs[0,1,:,0,0])
+            print(normalized_outputs[0,2,:,0,0])
+            mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
+            print("Mean outputs")
+            print(mean_outputs[0,:,0,0])
+            var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
+            print("Var outputs")
+            print(var_outputs[0,:,0,0])
+            ensamble_output = torch.argmax(input=mean_outputs,dim=1)
+            print("Ensamble output")
+            print(ensamble_output[0,0,0])
+            print("Target")
+            print(target[0,0,0])
             target = target.to(DEVICE)
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
 
-            ensamble_output = torch.argmax(input=mean_outputs,dim=0).to(DEVICE)
-            
+
             # logg dice los of epoch
             
             # Delete variables to free up memory
