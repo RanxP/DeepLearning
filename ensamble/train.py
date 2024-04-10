@@ -122,12 +122,13 @@ def main(args):
 
         running_loss = 0.0
         dice_decoder_losses = [[],[],[]]
-        model.train()
+        model.eval()
         # training loop
         
         #
         total_known_classes_activation = []
         total_unknown_classes_activation = []
+        total_mean_softmax_score_of_image = []
         for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
             inputs = inputs.to(DEVICE)
             # ignore labels that are not in test set 
@@ -145,9 +146,9 @@ def main(args):
                 # devise los for one specific decoder
                 loss = criterion(output,decoder_specific_lables)
                 # take a step for only one decoder ? 
-                optimizers[i].zero_grad()
-                loss.backward()
-                optimizers[i].step()
+                # optimizers[i].zero_grad()
+                # loss.backward()
+                # optimizers[i].step()
                 
                 dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                 
@@ -179,18 +180,20 @@ def main(args):
             # Get the indices of the known and unknown classes
             known_indices = (target != 19)
             unknown_indices = (target == 19)
-            print(known_indices.shape)
-            print(unknown_indices.shape)
-            print(known_indices[0])
-            print(unknown_indices[0])
+            # print(known_indices.shape)
+            # print(unknown_indices.shape)
+            # print(known_indices[0])
+            # print(unknown_indices[0])
 
             # Compute the mean activation of the known and unknown classes
             activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1)
             activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
-            print(activation_score_per_image)
+            mean_softmax_score_of_image = torch.mean(torch.max(mean_outputs, dim=2)[0],dim = 0).item()
+
             known_classes_activation = torch.mean(activation_score_per_image).item()
             unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
             
+            total_mean_softmax_score_of_image.append(mean_softmax_score_of_image)
             total_known_classes_activation.append(known_classes_activation)
             total_unknown_classes_activation.append(unknown_classes_activation)
             # print the mean known and unknown classes activation
