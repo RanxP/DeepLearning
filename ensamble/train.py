@@ -178,6 +178,8 @@ def main(args):
             dice_losses.append(dice(mean_outputs,target).detach().cpu())
             # get the normalized outputs for the unknown classes
             # Get the indices of the known and unknown classes
+            target = target.cpu()
+            mean_outputs = mean_outputs.cpu()
             known_indices = (target != 19)
             unknown_indices = (target == 19)
             # print(known_indices.shape)

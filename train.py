@@ -23,7 +23,7 @@ from tqdm import tqdm
 from DataLoader import * # , calculate_mean
 from utils import LABELS, map_id_to_train_id, train_id_to_name
 from DataVisualizations import visualize_criterion
-from support_train import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
+from train_utils import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
 
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,7 +41,7 @@ def get_arg_parser():
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
     
-    parser.add_argument("--figure_size", type=tuple[int,int], default=IMG_SIZE, help="Width of the figure in pixels")
+    parser.add_argument("--figure_size", type=int, default=8, help="height of the figure in pixels described in the power of 2")
     parser.add_argument("--TRANSFORM_STRUCTURE", type= list, default=[TRANSFORM_STRUCTURE], help="Training transformation")
     parser.add_argument("--TRANSFORM_STRUCTURE_VAL", type= list, default=TRANSFORM_STRUCTURE_VAL, help="Validation transformation")
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
@@ -59,8 +59,10 @@ def main(args):
     
     train_loader, val_loader = generate_data_loaders(args)
 
-    # define model
-    model = Model().init_weights()
+    from transformers import AutoImageProcessor, UperNetForSemanticSegmentation
+
+    processor = AutoImageProcessor.from_pretrained("openmmlab/upernet-swin-large")
+    model = UperNetForSemanticSegmentation.from_pretrained("openmmlab/upernet-swin-large")
     # torch.compile(model)
     model = model.to(DEVICE)
 
