@@ -199,6 +199,7 @@ def main(args):
             # print the mean known and unknown classes activation
             print(f"Mean known classes activation: {sum(total_known_classes_activation)/len(total_known_classes_activation)}")
             print(f"Mean unknown classes activation: {sum(total_unknown_classes_activation)/len(total_unknown_classes_activation)}")
+            print(f"Mean softmax score of image: {sum(total_mean_softmax_score_of_image)/len(total_mean_softmax_score_of_image)}")
             
             # Delete variables to free up memory
             del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
