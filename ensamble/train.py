@@ -186,13 +186,17 @@ def main(args):
             # print(unknown_indices[0])
 
             # Compute the mean activation of the known and unknown classes
-            activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1)
-            activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
-            softmax_score_per_pixel, _ = torch.max(mean_outputs, dim=2)
+            print(mean_outputs.permute(0,2,3,1)[known_indices[0]])
+            activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=0)
+            activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=0)
+            softmax_score_per_pixel, _ = torch.max(mean_outputs.permute(0,2,3,1), dim=3)
+            print(activation_score_per_image.shape)
+            print(activation_score_per_image)
+            print(softmax_score_per_pixel.shape, softmax_score_per_pixel)
 
             known_classes_activation = torch.mean(activation_score_per_image).item()
             unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
-            mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel,dim = 0).item()
+            mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel).item()
             
             total_mean_softmax_score_of_image.append(mean_softmax_score_of_image)
             total_known_classes_activation.append(known_classes_activation)
