@@ -96,7 +96,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
+    # load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
 
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
@@ -129,86 +129,86 @@ def main(args):
         total_known_classes_activation = []
         total_unknown_classes_activation = []
         total_mean_softmax_score_of_image = []
-        for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
-            inputs = inputs.to(DEVICE)
-            # ignore labels that are not in test set 
-            target = target.long().squeeze()
-            target = map_id_to_train_id(target)
-            outputs = model(inputs)
-            dice_losses = []
-            # multiple outputs 
-            for i, output in enumerate(outputs):
-                total_loss = 0
-                output = output.to(DEVICE)
-                # convert abels to exclude classes
-                decoder_specific_lables = remove_classes_from_tensor(target, classes_to_ignore[i])
-                decoder_specific_lables = decoder_specific_lables.to(DEVICE)
-                # devise los for one specific decoder
-                loss = criterion(output,decoder_specific_lables)
-                # take a step for only one decoder ? 
-                # optimizers[i].zero_grad()
-                # loss.backward()
-                # optimizers[i].step()
+        with torch.no_grad():
+            for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
+                inputs = inputs.to(DEVICE)
+                # ignore labels that are not in test set 
+                target = target.long().squeeze()
+                target = map_id_to_train_id(target)
+                outputs = model(inputs)
+                dice_losses = []
+                # multiple outputs 
+                for i, output in enumerate(outputs):
+                    total_loss = 0
+                    output = output.to(DEVICE)
+                    # convert abels to exclude classes
+                    decoder_specific_lables = remove_classes_from_tensor(target, classes_to_ignore[i])
+                    decoder_specific_lables = decoder_specific_lables.to(DEVICE)
+                    # devise los for one specific decoder
+                    loss = criterion(output,decoder_specific_lables)
+                    # take a step for only one decoder ? 
+                    # optimizers[i].zero_grad()
+                    # loss.backward()
+                    # optimizers[i].step()
+                    
+                    dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
+                    
+                    total_loss += loss.item()
                 
-                dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                 
-                total_loss += loss.item()
-            
-            
-            running_loss += total_loss / 3
-            print(running_loss)
-            outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
-            torch.save(outputs_tensor, "outputs.pt")
-            normalized_outputs = F.softmax(outputs_tensor, dim=2)
-            # print(normalized_outputs[0,0,:,0,0])
-            # print(normalized_outputs[0,1,:,0,0])
-            # print(normalized_outputs[0,2,:,0,0])
-            mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
-            # print("Mean outputs")
-            # print(mean_outputs[0,:,0,0])
-            var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
-            # print("Var outputs")
-            # print(var_outputs[0,:,0,0])
-            ensamble_output = torch.argmax(input=mean_outputs,dim=1)
-            # print("Ensamble output")
-            # print(ensamble_output[0,0,0])
-            # print("Target")
-            # print(target[0,0,0])
-            target = target.to(DEVICE)
-            dice_losses.append(dice(mean_outputs,target).detach().cpu())
-            # get the normalized outputs for the unknown classes
-            # Get the indices of the known and unknown classes
-            target = target.cpu()
-            mean_outputs = mean_outputs.cpu()
-            known_indices = (target != 19)
-            unknown_indices = (target == 19)
-            # print(known_indices.shape)
-            # print(unknown_indices.shape)
-            # print(known_indices[0])
-            # print(unknown_indices[0])
+                running_loss += total_loss / 3
+                print(running_loss)
+                outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
+                torch.save(outputs_tensor, "outputs.pt")
+                normalized_outputs = F.softmax(outputs_tensor, dim=2)
+                # print(normalized_outputs[0,0,:,0,0])
+                # print(normalized_outputs[0,1,:,0,0])
+                # print(normalized_outputs[0,2,:,0,0])
+                mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
+                # print("Mean outputs")
+                # print(mean_outputs[0,:,0,0])
+                var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
+                # print("Var outputs")
+                # print(var_outputs[0,:,0,0])
+                ensamble_output = torch.argmax(input=mean_outputs,dim=1)
+                # print("Ensamble output")
+                # print(ensamble_output[0,0,0])
+                # print("Target")
+                # print(target[0,0,0])
+                target = target.to(DEVICE)
+                dice_losses.append(dice(mean_outputs,target).detach().cpu())
+                # get the normalized outputs for the unknown classes
+                # Get the indices of the known and unknown classes
+                target = target.cpu()
+                mean_outputs = mean_outputs.cpu()
+                known_indices = (target != 19)
+                unknown_indices = (target == 19)
+                # print(known_indices.shape)
+                # print(unknown_indices.shape)
+                # print(known_indices[0])
+                # print(unknown_indices[0])
 
-            # Compute the mean activation of the known and unknown classes
-            activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=0)
-            activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=0)
-            softmax_score_per_pixel, _ = torch.max(mean_outputs.permute(0,2,3,1), dim=3)
-            print(activation_score_per_image.shape)
-            print(activation_score_per_image)
-            print(softmax_score_per_pixel.shape, softmax_score_per_pixel)
+                # Compute the mean activation of the known and unknown classes
+                activation_score_per_image, prediction_per_image = torch.max(mean_outputs.permute(0,2,3,1)[known_indices],dim=1) # dim is checked 
+                activation_score_per_image_unknown, prediction_per_image_unknown = torch.max(mean_outputs.permute(0,2,3,1)[unknown_indices],dim=1)
+                softmax_score_per_pixel, _ = torch.max(mean_outputs.permute(0,2,3,1), dim=3)
+                print(activation_score_per_image.shape)
+                print(softmax_score_per_pixel.shape, softmax_score_per_pixel)
 
-            known_classes_activation = torch.mean(activation_score_per_image).item()
-            unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
-            mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel).item()
-            
-            total_mean_softmax_score_of_image.append(mean_softmax_score_of_image)
-            total_known_classes_activation.append(known_classes_activation)
-            total_unknown_classes_activation.append(unknown_classes_activation)
-            # print the mean known and unknown classes activation
-            print(f"Mean known classes activation: {sum(total_known_classes_activation)/len(total_known_classes_activation)}")
-            print(f"Mean unknown classes activation: {sum(total_unknown_classes_activation)/len(total_unknown_classes_activation)}")
-            print(f"Mean softmax score of image: {sum(total_mean_softmax_score_of_image)/len(total_mean_softmax_score_of_image)}")
-            
-            # Delete variables to free up memory
-            del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
+                known_classes_activation = torch.mean(activation_score_per_image).item()
+                unknown_classes_activation = torch.mean(activation_score_per_image_unknown).item()
+                mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel).item()
+                
+                total_mean_softmax_score_of_image.append(mean_softmax_score_of_image)
+                total_known_classes_activation.append(known_classes_activation)
+                total_unknown_classes_activation.append(unknown_classes_activation)
+                # print the mean known and unknown classes activation
+                print(f"Mean known classes activation: {sum(total_known_classes_activation)/len(total_known_classes_activation)}")
+                print(f"Mean unknown classes activation: {sum(total_unknown_classes_activation)/len(total_unknown_classes_activation)}")
+                print(f"Mean softmax score of image: {sum(total_mean_softmax_score_of_image)/len(total_mean_softmax_score_of_image)}")
+                
+                # Delete variables to free up memory
+                del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
             
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
