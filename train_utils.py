@@ -19,6 +19,7 @@ from torchmetrics.classification import MulticlassJaccardIndex, MulticlassF1Scor
 import wandb
 from tqdm import tqdm
 def _init_wandb(args):
+    time.sleep(2)
     run = wandb.init(
         # Set the project where this run will be logged
         project="SegmentationTrafficImages",

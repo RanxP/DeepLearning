@@ -153,7 +153,7 @@ def main(args):
                 
                 dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                 
-                total_loss += loss.item().cpu()
+                total_loss += loss.item()
             
             
             running_loss += total_loss / 3
