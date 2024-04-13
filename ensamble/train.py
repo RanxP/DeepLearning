@@ -205,11 +205,6 @@ def main(args):
                     decoder_specific_lables = decoder_specific_lables.to(DEVICE)
                     # devise los for one specific decoder
                     loss = criterion(output,decoder_specific_lables)
-                    # take a step for only one decoder ? 
-                    optimizers[i].zero_grad()
-                    loss.backward()
-                    optimizers[i].step()
-                    
                     dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                     
                     total_loss += loss.item()
