@@ -120,30 +120,55 @@ class decoder_block(nn.Module):
         x = self.conv(x)
 
         return x
-    
+
+
+# general network structure for ensamble model
 class EnsambleModel(nn.Module):
     def __init__(self,encoder:pre_trained_encoder,decoders : list[standalone_decoder]):
         super().__init__()
 
-        """ Encoder """
         self.e = encoder
-        self.decoders = decoders
+        self.decoders = torch.nn.ModuleList(decoders)
         self.params, self.buffers = stack_module_state(decoders)
-        
+          
+    def freeze_encoder(self):
+        for param in self.e.parameters():
+            param.requires_grad = False  
+
     def fdecoder(params, buffers, x):
         return functional_call(standalone_decoder().to('meta'), (params, buffers), (x,))
     
-    def freeze_encoder(self):
-        for param in self.e.parameters():
-            param.requires_grad = False
-
     def forward(self, inputs):
         s1, s2, s3, s4, b = self.e(inputs)
         # outputs = vmap(self.fdecoder, in_dims=(0, 0, None))(self.params, self.buffers, s1, s2, s3, s4, b)
-        outputs = [ decoder(s1, s2, s3, s4, b) for decoder in self.decoders]
+        outputs = [decoder(s1, s2, s3, s4, b) for decoder in self.decoders]
         return outputs
     
-    def loss(self, outputs, labels, criterion):
-        for output in outputs.unbinds(0):
-            loss = criterion(outputs, labels)
-        return loss
+# function to populate this model for validation purposes 
+def Model() -> EnsambleModel:
+    
+    def create_decoders(nr_decoders:int):
+        decoders = []
+        classes_to_ignore = []
+        
+        if 18 % nr_decoders != 0:
+            raise Warning("Number of decoders must be a factor of 18")
+        for i in range(nr_decoders):
+            begin_class = i * int(18 / nr_decoders)
+            end_class = (i + 1) * int(18 / nr_decoders)
+            classes_to_ignore.append( list(range(begin_class,end_class)))
+            
+            decoder = standalone_decoder()
+            decoders.append(decoder)
+            
+        return decoders
+    
+    encoder = pre_trained_encoder()
+    decoders = create_decoders(3)
+    return EnsambleModel(encoder,decoders)
+    
+
+    
+
+
+

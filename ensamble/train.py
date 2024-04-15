@@ -10,6 +10,7 @@ from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
 
 from matplotlib import pyplot as plt
+import seaborn as sns
 from numpy import var
 
 
@@ -63,7 +64,7 @@ def get_arg_parser():
     parser.add_argument("--verbose", type=bool, default=True, help="Print out the training scores or not")
     parser.add_argument("--cloud_exec", action=BooleanOptionalAction, default=False, help="Run the training locally or not")
     
-    parser.add_argument("--figure_size", type=int, default=8, help="height of the figure in pixels described in the power of 2")
+    parser.add_argument("--figure_size", type=int, default=7, help="height of the figure in pixels described in the power of 2")
     parser.add_argument("--TRANSFORM_STRUCTURE", type= list, default=TRANSFORM_STRUCTURE, help="Training transformation")
     parser.add_argument("--TRANSFORM_STRUCTURE_VAL", type= list, default=TRANSFORM_STRUCTURE_VAL, help="Validation transformation")
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
@@ -96,11 +97,11 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    # load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
+    load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
 
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
-    load_encoder_weights(model, "model_final_vhb12qyp.pth")
+    #load_encoder_weights(model, "model_final_vhb12qyp.pth")
     model.freeze_encoder()
     # torch.compile(model)
     model = model.to(DEVICE)
@@ -128,6 +129,7 @@ def main(args):
 
         running_loss = 0.0
         dice_decoder_losses = [[],[],[]]
+        dice_losses = []
         model.eval()
         # training loop
         for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
@@ -136,7 +138,7 @@ def main(args):
             target = target.long().squeeze()
             target = map_id_to_train_id(target)
             outputs = model(inputs)
-            dice_losses = []
+            
             # multiple outputs 
             for i, output in enumerate(outputs):
                 total_loss = 0
@@ -187,7 +189,7 @@ def main(args):
                 log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
         # clean cache
         torch.cuda.empty_cache()
-        
+        dice_losses = []
         with torch.no_grad():
             for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
                 inputs = inputs.to(DEVICE)
@@ -195,7 +197,6 @@ def main(args):
                 target = target.long().squeeze()
                 target = map_id_to_train_id(target)
                 outputs = model(inputs)
-                dice_losses = []
                 # multiple outputs 
                 for i, output in enumerate(outputs):
                     total_loss = 0
@@ -238,20 +239,44 @@ def main(args):
                                     "unknown_classes_activation": round(torch.mean(torch.tensor(val_total_unknown_classes_activation)).item(),4)}})
                 # visualize the distribution of the activations
                 fig, ax = plt.subplots(2,1)
+
+                # First subplot for training data
+                ax[0].set_title("Training")
                 ax[0].hist(train_total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
-                ax[1].hist(train_total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
+                ax[0].hist(train_total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
                 ax[0].legend()
-                ax[1].legend()
-                fig.savefig(f"train_activation_{epoch}.png")
-                fig.close()
-                
-                fig, ax = plt.subplots(2,1)
-                ax[0].hist(val_total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
+
+                # Second subplot for validation data
+                ax[1].set_title("Validation")
+                ax[1].hist(val_total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
                 ax[1].hist(val_total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
-                ax[0].legend()
                 ax[1].legend()
-                fig.savefig(f"val_activation_{epoch}.png")
-                fig.close()
+
+                # Save the figure
+                fig.savefig(f"activation_{epoch}.png")
+                wandb.log({"activation on known versus unknown classes": wandb.Image(fig)})
+                plt.close(fig)
+                
+                # try seaborn
+                fig, ax = plt.subplots(2,1)
+                
+                # First subplot for training data
+                ax[0].set_title("Training")
+                sns.distplot(train_total_known_classes_activation, bins=100, ax=ax[0], label='Known classes activation', kde=True)
+                sns.distplot(train_total_unknown_classes_activation, bins=100, ax=ax[0], label='Unknown classes activation', kde=True)
+                ax[0].legend()
+
+                # Second subplot for validation data
+                ax[1].set_title("Validation")
+                sns.distplot(val_total_known_classes_activation, bins=100, ax=ax[1], label='Known classes activation', kde=True)
+                sns.distplot(val_total_unknown_classes_activation, bins=100, ax=ax[1], label='Unknown classes activation', kde=True)
+                ax[1].legend()
+
+                # Save the figure
+                fig.savefig(f"activation_sborn{epoch}.png")
+                wandb.log({"activation on known versus unknown classes seaborn": wandb.Image(fig)})
+                plt.close(fig)
+                
             except Exception as e:
                 print(e)
             
