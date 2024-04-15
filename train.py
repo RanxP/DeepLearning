@@ -23,7 +23,7 @@ from tqdm import tqdm
 from DataLoader import * # , calculate_mean
 from utils import LABELS, map_id_to_train_id, train_id_to_name
 from DataVisualizations import visualize_criterion
-from train_utils import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
+from train_utils import _init_wandb, _print_quda_info, load_model_weights, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
 
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -59,11 +59,12 @@ def main(args):
     
     train_loader, val_loader = generate_data_loaders(args)
 
-    from transformers import AutoImageProcessor, UperNetForSemanticSegmentation
+    #from transformers import AutoImageProcessor, UperNetForSemanticSegmentation
 
-    processor = AutoImageProcessor.from_pretrained("openmmlab/upernet-swin-large")
-    model = UperNetForSemanticSegmentation.from_pretrained("openmmlab/upernet-swin-large")
-    # torch.compile(model)
+    #processor = AutoImageProcessor.from_pretrained("openmmlab/upernet-swin-large")
+    #model = UperNetForSemanticSegmentation.from_pretrained("openmmlab/upernet-swin-large")
+    torch.compile(model)
+    model = load_model_weights(model, "model_best_performance_quijfmub.pth")
     model = model.to(DEVICE)
 
     # define optimizer and loss function (don't forget to ignore class index 255)

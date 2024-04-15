@@ -30,7 +30,7 @@ sys.path.insert(0, os.getcwd())
 from DataLoader import *
 from utils import LABELS, map_id_to_train_id, train_id_to_name, remove_classes_from_tensor
 from DataVisualizations import visualize_criterion
-from train_utils import _init_wandb, _print_quda_info, process_validation_performance, log_dice_loss, ModelEvaluator, save_model
+from train_utils import _init_wandb, _print_quda_info, load_model_weights, log_dice_loss, ModelEvaluator, save_model
 
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -75,17 +75,6 @@ def get_arg_parser():
     
     return parser
 
-def load_encoder_weights(encoder,model_file:str):
-    full_model_path = os.path.join(os.getcwd(), "model", model_file)
-    pretrained_dict = (torch.load(full_model_path))
-    model_dict = encoder.state_dict()
-        # 1. filter out unnecessary keys
-    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-    # 2. overwrite entries in the existing state dict
-    model_dict.update(pretrained_dict) 
-    # 3. load the new state dict
-    encoder.load_state_dict(pretrained_dict)
-
 
 
 def main(args):
@@ -97,8 +86,8 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    load_encoder_weights(encoder, "model_final_vhb12qyp.pth")
-
+    encoder = load_model_weights(encoder, "model_best_performance_quijfmub.pth")
+    
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
     #load_encoder_weights(model, "model_final_vhb12qyp.pth")

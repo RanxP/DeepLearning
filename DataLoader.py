@@ -94,13 +94,13 @@ def generate_data_loaders(args) -> tuple[torch.utils.data.DataLoader, torch.util
                     transforms=transform_collection.transform_dual_train, target_type='semantic')
     
     train_subset, _ = torch.utils.data.random_split(trainset, [0.8, 0.2],
-                                            generator=torch.Generator().manual_seed(1))
+                                            generator=torch.Generator().manual_seed(1480928))
     
     valset = Cityscapes(root = Path(args.data_path), split='train', mode='fine', 
                     transforms=transform_collection.transform_dual_val, target_type='semantic')
     
     _, val_subset = torch.utils.data.random_split(valset, [0.8, 0.2],
-                                            generator=torch.Generator().manual_seed(1))
+                                            generator=torch.Generator().manual_seed(1480928))
     
     trainloader = torch.utils.data.DataLoader(train_subset, batch_size=args.batch_size,
                                             shuffle=True, num_workers=args.workers,

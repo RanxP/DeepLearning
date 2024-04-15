@@ -98,10 +98,18 @@ def save_model(model, args, name_parameter:str):
     # Save the model
     torch.save(model.state_dict(), model_dir + model_filename)
     
-def _hot_load_model(model ,model_path:str):
-    full_model_path = os.path.join(os.getcwd(), model_path)
-    model.load_state_dict(torch.load(full_model_path))
-    model.eval()
+def load_model_weights(model,model_file:str):
+    full_model_path = os.path.join(os.getcwd(), "model", model_file)
+    pretrained_dict = (torch.load(full_model_path))
+    model_dict = model.state_dict()
+    # 1. filter out unnecessary keys
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+    # 2. overwrite entries in the existing state dict
+    model_dict.update(pretrained_dict) 
+    # 3. load the new state dict
+    model.load_state_dict(pretrained_dict)
+    wandb.log({"model": model_file})
+    
     return model
 
         
