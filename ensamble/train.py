@@ -97,7 +97,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    load_encoder_weights(encoder, "model_best_performance_quijfmub.pth")
+    load_encoder_weights(encoder, "model_final_vhb12qyp.pth")
 
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
@@ -229,56 +229,33 @@ def main(args):
                 del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
             
         if wandb.config.verbose:
-            try:
-                # log mean_softmax_score_of_image and activation of known and unknown classes
-                wandb.log({"train": {"mean_softmax_score_of_image": round(torch.mean(torch.tensor(train_total_mean_softmax_score_of_image)).item(),4),
-                                    "known_classes_activation": round(torch.mean(torch.tensor(train_total_known_classes_activation)).item(),4),
-                                    "unknown_classes_activation": round(torch.mean(torch.tensor(train_total_unknown_classes_activation)).item(),4)}})
-                wandb.log({"val": {"mean_softmax_score_of_image": round(torch.mean(torch.tensor(val_total_mean_softmax_score_of_image)).item(),4),
-                                    "known_classes_activation": round(torch.mean(torch.tensor(val_total_known_classes_activation)).item(),4),
-                                    "unknown_classes_activation": round(torch.mean(torch.tensor(val_total_unknown_classes_activation)).item(),4)}})
-                # visualize the distribution of the activations
-                fig, ax = plt.subplots(2,1)
+            # log mean_softmax_score_of_image and activation of known and unknown classes
+            wandb.log({"train": {"mean_softmax_score_of_image": round(torch.mean(torch.tensor(train_total_mean_softmax_score_of_image)).item(),4),
+                                "known_classes_activation": round(torch.mean(torch.tensor(train_total_known_classes_activation)).item(),4),
+                                "unknown_classes_activation": round(torch.mean(torch.tensor(train_total_unknown_classes_activation)).item(),4)}})
+            wandb.log({"val": {"mean_softmax_score_of_image": round(torch.mean(torch.tensor(val_total_mean_softmax_score_of_image)).item(),4),
+                                "known_classes_activation": round(torch.mean(torch.tensor(val_total_known_classes_activation)).item(),4),
+                                "unknown_classes_activation": round(torch.mean(torch.tensor(val_total_unknown_classes_activation)).item(),4)}})
+            # visualize the distribution of the activations
+            fig, ax = plt.subplots(2,1)
+            
+            # First subplot for training data
+            ax[0].set_title("Training")
+            sns.histplot(train_total_known_classes_activation, bins=100, ax=ax[0], label='Known classes activation', kde=True)
+            sns.histplot(train_total_unknown_classes_activation, bins=100, ax=ax[0], label='Unknown classes activation', kde=True)
+            ax[0].legend()
 
-                # First subplot for training data
-                ax[0].set_title("Training")
-                ax[0].hist(train_total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
-                ax[0].hist(train_total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
-                ax[0].legend()
+            # Second subplot for validation data
+            ax[1].set_title("Validation")
+            sns.histplot(val_total_known_classes_activation, bins=100, ax=ax[1], label='Known classes activation', kde=True)
+            sns.histplot(val_total_unknown_classes_activation, bins=100, ax=ax[1], label='Unknown classes activation', kde=True)
+            ax[1].legend()
 
-                # Second subplot for validation data
-                ax[1].set_title("Validation")
-                ax[1].hist(val_total_known_classes_activation, bins=100, alpha=0.5, label='Known classes activation')
-                ax[1].hist(val_total_unknown_classes_activation, bins=100, alpha=0.5, label='Unknown classes activation')
-                ax[1].legend()
-
-                # Save the figure
-                fig.savefig(f"activation_{epoch}.png")
-                wandb.log({"activation on known versus unknown classes": wandb.Image(fig)})
-                plt.close(fig)
+            # Save the figure
+            wandb.log({"activation on known versus unknown classes seaborn": wandb.Image(fig)})
+            plt.close(fig)
                 
-                # try seaborn
-                fig, ax = plt.subplots(2,1)
-                
-                # First subplot for training data
-                ax[0].set_title("Training")
-                sns.histplot(train_total_known_classes_activation, bins=100, ax=ax[0], label='Known classes activation', kde=True)
-                sns.histplot(train_total_unknown_classes_activation, bins=100, ax=ax[0], label='Unknown classes activation', kde=True)
-                ax[0].legend()
 
-                # Second subplot for validation data
-                ax[1].set_title("Validation")
-                sns.histplot(val_total_known_classes_activation, bins=100, ax=ax[1], label='Known classes activation', kde=True)
-                sns.histplot(val_total_unknown_classes_activation, bins=100, ax=ax[1], label='Unknown classes activation', kde=True)
-                ax[1].legend()
-
-                # Save the figure
-                fig.savefig(f"activation_sborn{epoch}.png")
-                wandb.log({"activation on known versus unknown classes seaborn": wandb.Image(fig)})
-                plt.close(fig)
-                
-            except Exception as e:
-                print(e)
             
             
             mean_dice_loss = log_dice_loss(dice_losses,"val")
