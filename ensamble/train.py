@@ -262,14 +262,14 @@ def main(args):
                 
                 # First subplot for training data
                 ax[0].set_title("Training")
-                sns.distplot(train_total_known_classes_activation, bins=100, ax=ax[0], label='Known classes activation', kde=True)
-                sns.distplot(train_total_unknown_classes_activation, bins=100, ax=ax[0], label='Unknown classes activation', kde=True)
+                sns.histplot(train_total_known_classes_activation, bins=100, ax=ax[0], label='Known classes activation', kde=True)
+                sns.histplot(train_total_unknown_classes_activation, bins=100, ax=ax[0], label='Unknown classes activation', kde=True)
                 ax[0].legend()
 
                 # Second subplot for validation data
                 ax[1].set_title("Validation")
-                sns.distplot(val_total_known_classes_activation, bins=100, ax=ax[1], label='Known classes activation', kde=True)
-                sns.distplot(val_total_unknown_classes_activation, bins=100, ax=ax[1], label='Unknown classes activation', kde=True)
+                sns.histplot(val_total_known_classes_activation, bins=100, ax=ax[1], label='Known classes activation', kde=True)
+                sns.histplot(val_total_unknown_classes_activation, bins=100, ax=ax[1], label='Unknown classes activation', kde=True)
                 ax[1].legend()
 
                 # Save the figure
