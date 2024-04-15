@@ -63,7 +63,7 @@ def main(args):
 
     #processor = AutoImageProcessor.from_pretrained("openmmlab/upernet-swin-large")
     #model = UperNetForSemanticSegmentation.from_pretrained("openmmlab/upernet-swin-large")
-    torch.compile(model)
+    model = Model()
     model = load_model_weights(model, "model_best_performance_quijfmub.pth")
     model = model.to(DEVICE)
 

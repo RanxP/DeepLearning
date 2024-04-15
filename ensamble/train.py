@@ -226,7 +226,7 @@ def main(args):
                                 "known_classes_activation": round(torch.mean(torch.tensor(val_total_known_classes_activation)).item(),4),
                                 "unknown_classes_activation": round(torch.mean(torch.tensor(val_total_unknown_classes_activation)).item(),4)}})
             # visualize the distribution of the activations
-            fig, ax = plt.subplots(2,1)
+            fig, ax = plt.subplots(2,1, figsize=(5,10))
             
             # First subplot for training data
             ax[0].set_title("Training")
