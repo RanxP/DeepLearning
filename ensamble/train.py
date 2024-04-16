@@ -86,7 +86,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    encoder = load_model_weights(encoder, "model_best_performance_quijfmub.pth")
+    encoder = load_model_weights(encoder, "model_checkpoint_24_uaij0fix.pth")
     
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
