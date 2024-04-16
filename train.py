@@ -167,7 +167,7 @@ def main(args):
             
             process_validation_performance(criterion_val_performance)
             # save checkpoint if performance is better
-            if epoch+ 1 % 5 == 0:
+            if (epoch+ 1) % 5 == 0:
                 save_model(model, args, f"checkpoint_{epoch}")
             
             if (epoch + 1)/num_epochs > 0.75:
