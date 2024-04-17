@@ -33,7 +33,7 @@ def get_arg_parser():
     parser = ArgumentParser()
     parser.add_argument("--data_path", type=str, default="data", help="Path to the data")
     """add more arguments here and change the default values to your needs in the run_container.sh file"""
-    parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training and validation")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size for training and validation")
     parser.add_argument("--model_path", type=str, default="model", help="Path to save the model")
     parser.add_argument("--workers", type=int, default=8, help="Path to save the model")
     parser.add_argument("--number_of_epochs", type=int, default=3, help="nr of epochs in training")

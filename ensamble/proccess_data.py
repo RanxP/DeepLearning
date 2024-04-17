@@ -1,14 +1,29 @@
 import numpy as np
-from sympy import oo
 from torchvision import transforms
 import torch
-from DataLoader import TRANSFORM_IMAGE
+
+CHANNEL_MEANS = [0.485, 0.456, 0.406]
+CHANNEL_STDS = [0.229, 0.224, 0.225]
+
+IMG_SIZE = (512,1024)
+
+
+TRANSFORM_STRUCTURE_VAL = transforms.Compose([
+    transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)
+])
+
+TRANSFORM_IMAGE =  transforms.Compose([
+    transforms.PILToTensor(),
+    transforms.ConvertImageDtype(torch.float32),
+    transforms.Normalize(mean=CHANNEL_MEANS, std = CHANNEL_STDS)
+    ])
 
 def preprocess(img):
     """preproces image:
     input is a PIL image.
     Output image should be pytorch tensor that is compatible with your model"""
 
+    img = TRANSFORM_STRUCTURE_VAL(img)
     img = TRANSFORM_IMAGE(img)
     img = img.unsqueeze(0)
 

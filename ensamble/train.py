@@ -35,6 +35,10 @@ from train_utils import _init_wandb, _print_quda_info, load_model_weights, log_d
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+torch.cuda.memory._record_memory_history(
+        # keep a maximum 100,000 alloc/free events from before the snapshot
+        max_entries=100000)
+
 def create_decoders(nr_decoders:int):
     decoders = []
     classes_to_ignore = []
@@ -86,7 +90,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    encoder = load_model_weights(encoder, "model_checkpoint_24_uaij0fix.pth")
+    encoder = load_model_weights(encoder, "model_final_uaij0fix.pth")
     
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
@@ -143,9 +147,10 @@ def main(args):
                 optimizers[i].step()
                 
                 dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
-                
-                total_loss += loss.item()
             
+                snapshot = torch.cuda.memory._snapshot()
+                total_loss += loss.item()
+            print(snapshot['device_traces'][0])
             
             running_loss += total_loss / 3
             print(running_loss)
@@ -197,7 +202,9 @@ def main(args):
                     loss = criterion(output,decoder_specific_lables)
                     dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
                     
-                    total_loss += loss.item()
+                    snapshot = torch.cuda.memory._snapshot()
+                total_loss += loss.item()
+                print(snapshot['device_traces'][0])
                 
                 
                 running_loss += total_loss / 3
@@ -243,8 +250,10 @@ def main(args):
             # Save the figure
             wandb.log({"activation on known versus unknown classes seaborn": wandb.Image(fig)})
             plt.close(fig)
-                
-
+            
+            from pickle import dump
+            with open(f'snapshot{wandb.run._run_id}.pickle', 'wb') as f:
+                dump(snapshot, f)
             
             
             mean_dice_loss = log_dice_loss(dice_losses,"val")
