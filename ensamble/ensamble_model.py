@@ -37,13 +37,13 @@ class standalone_decoder(nn.Module):
         super().__init__()
         
         """ Decoder """
-        self.d1 = decoder_block(1024, 1024, 256)
-        self.d2 = decoder_block(256, 512, 128)
-        self.d3 = decoder_block(128, 256, 64)
-        self.d4 = decoder_block(64,128, 32)
+        self.d1 = decoder_block(1024, 512)
+        self.d2 = decoder_block(512, 256)
+        self.d3 = decoder_block(256, 128)
+        self.d4 = decoder_block(128, 64)
         
         """ Classifier """
-        self.outputs = nn.Conv2d(32, 20, kernel_size=1, padding=0)
+        self.outputs = nn.Conv2d(64, 20, kernel_size=1, padding=0)
     
     def forward(self, s1, s2, s3, s4, b):
         """ Decoder """
@@ -108,11 +108,11 @@ class encoder_block(nn.Module):
     Here the number filters decreases by half and the height and width doubles.
 """
 class decoder_block(nn.Module):
-    def __init__(self, in_c, skip_c, out_c):
+    def __init__(self, in_c, out_c):
         super().__init__()
 
         self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
-        self.conv = conv_block(skip_c+out_c, out_c)
+        self.conv = conv_block(out_c+out_c, out_c)
 
     def forward(self, inputs, skip):
         x = self.up(inputs)
