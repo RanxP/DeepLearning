@@ -35,10 +35,6 @@ from train_utils import _init_wandb, _print_quda_info, load_model_weights, log_d
 # Define the device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-torch.cuda.memory._record_memory_history(
-        # keep a maximum 100,000 alloc/free events from before the snapshot
-        max_entries=100000)
-
 def create_decoders(nr_decoders:int):
     decoders = []
     classes_to_ignore = []
@@ -122,7 +118,7 @@ def main(args):
 
         running_loss = 0.0
         dice_decoder_losses = [[],[],[]]
-        dice_losses = []
+        dice_losses_train = []
         model.eval()
         # training loop
         for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
@@ -145,23 +141,20 @@ def main(args):
                 optimizers[i].zero_grad()
                 loss.backward()
                 optimizers[i].step()
-                
-                dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
             
-                snapshot = torch.cuda.memory._snapshot()
                 total_loss += loss.item()
-            print(snapshot['device_traces'][0])
+
             
             running_loss += total_loss / 3
             print(running_loss)
             outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
             normalized_outputs = F.softmax(outputs_tensor, dim=2) # checked is correct
             mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
-            var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
-            ensamble_output = torch.argmax(input=mean_outputs,dim=1)
+            # var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
+            # ensamble_output = torch.argmax(input=mean_outputs,dim=1)
             
             target = target.to(DEVICE)
-            dice_losses.append(dice(mean_outputs,target).detach().cpu())
+            dice_losses_train.append(dice(mean_outputs,target).detach().cpu())
             results = calibrate_activation(mean_outputs, target)
             train_total_known_classes_activation.append(results['known_classes_activation'])
             train_total_unknown_classes_activation.append(results['unknown_classes_activation'])
@@ -173,17 +166,18 @@ def main(args):
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
 
-            mean_dice_loss = log_dice_loss(dice_losses,"train")
+            mean_dice_loss = log_dice_loss(dice_losses_train,"train")
             if mean_dice_loss > min_dice_loss:
                 min_dice_loss = mean_dice_loss
                 save_model(model, args, f"best_train_performance")
                 # save_model(model, args, f"best_performance_epoch_{epoch+1}")
 
-            for i, dice_loss in enumerate(dice_decoder_losses):
-                log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
+            # for i, dice_loss in enumerate(dice_decoder_losses):
+            #     log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
+                
         # clean cache
         torch.cuda.empty_cache()
-        dice_losses = []
+        dice_losses_val = []
         with torch.no_grad():
             for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
                 inputs = inputs.to(DEVICE)
@@ -201,10 +195,8 @@ def main(args):
                     # devise los for one specific decoder
                     loss = criterion(output,decoder_specific_lables)
                     dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
-                    
-                    snapshot = torch.cuda.memory._snapshot()
+                
                 total_loss += loss.item()
-                print(snapshot['device_traces'][0])
                 
                 
                 running_loss += total_loss / 3
@@ -215,7 +207,7 @@ def main(args):
                 var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
                 ensamble_output = torch.argmax(input=mean_outputs,dim=1)
                 target = target.to(DEVICE)
-                dice_losses.append(dice(mean_outputs,target).detach().cpu())
+                dice_losses_val.append(dice(mean_outputs,target).detach().cpu())
                 results = calibrate_activation(mean_outputs, target)
                 val_total_known_classes_activation.append(results['known_classes_activation'])
                 val_total_unknown_classes_activation.append(results['unknown_classes_activation'])
@@ -251,12 +243,8 @@ def main(args):
             wandb.log({"activation on known versus unknown classes seaborn": wandb.Image(fig)})
             plt.close(fig)
             
-            from pickle import dump
-            with open(f'snapshot{wandb.run._run_id}.pickle', 'wb') as f:
-                dump(snapshot, f)
             
-            
-            mean_dice_loss = log_dice_loss(dice_losses,"val")
+            mean_dice_loss = log_dice_loss(dice_losses_val,"val")
             if mean_dice_loss > min_dice_loss:
                 min_dice_loss = mean_dice_loss
                 save_model(model, args, f"best_performance")
