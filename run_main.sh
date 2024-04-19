@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=18
 #SBATCH --gpus=1
 #SBATCH --partition=gpu
-#SBATCH --time=3:30:00
+#SBATCH --time=5:00:00
 
 cd /gpfs/home6/scur0773/DeepLearning/
 mkdir wandb/$SLURM_JOBID
