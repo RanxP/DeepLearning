@@ -164,7 +164,7 @@ def main(args):
             train_total_mean_softmax_score_of_image.append(results['mean_softmax_score_of_image'])
             # calculate activation of known and unknown classes
             # Delete variables to free up memory
-            del inputs, target, mean_outputs,decoder_specific_lables,output, outputs, loss
+            del target, mean_outputs,decoder_specific_lables,output, outputs, loss
         
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
