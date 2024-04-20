@@ -143,7 +143,7 @@ class EnsambleModel(nn.Module):
         for decoder in self.decoders:
             torch.cuda.empty_cache()
             output = decoder(s1, s2, s3, s4, b)
-            output = output
+            output = output.cpu()
             outputs.append(output)
             del output
         return outputs
