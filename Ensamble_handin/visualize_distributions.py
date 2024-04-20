@@ -3,25 +3,24 @@
 
 # # load model
 
-# In[30]:
+# In[18]:
 
 
-from model import Model 
+from Ensamble_handin.model import Model 
 from pathlib import Path
 import torch
-from process_data import preprocess
+from Ensamble_handin.process_data import preprocess
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 from PIL import Image 
 import numpy as np
-PATH = Path("Ensamble_handin/model.pth").absolute()
+PATH = Path("model/model_final_vhb12qyp.pth")
+
+IMAGE_SIZE = (512, 1024)
+BATCH_SIZE = 10
 
 
-IMAGE_SET_SIZE = 4
-BATCH_SIZE = 2
-
-
-# In[31]:
+# In[2]:
 
 
 model = Model()
@@ -29,7 +28,7 @@ model.load_state_dict(torch.load(PATH))
 model.to("cuda")
 
 
-# In[ ]:
+# In[3]:
 
 
 import os 
@@ -42,9 +41,31 @@ from DataVisualizations import visualize_criterion
 from train_utils import _init_wandb, _print_quda_info, load_model_weights, log_dice_loss, ModelEvaluator, save_model
 
 
+# In[ ]:
+
+
+# cittysckapes unseen data
+from dataclasses import dataclass
+
+@dataclass
+class Fake_args():
+    figure_size: int = 9
+    data_path: str = "/gpfs/work5/0/jhstue005/JHS_data/CityScapes"
+    batch_size: int = BATCH_SIZE
+    workers = 4 
+args = Fake_args()
+_ , val_loader = generate_data_loaders(args)
+
+
+# In[ ]:
+
+
+IMAGE_SET_SIZE = len(val_loader) * BATCH_SIZE
+
+
 # ## Load different datasets
 
-# In[32]:
+# In[19]:
 
 
 class RandomNoiseDataset(Dataset):
@@ -61,11 +82,11 @@ class RandomNoiseDataset(Dataset):
         im = preprocess(im)
         return im , [0]
 
-random_noise_dataloader_dataset = RandomNoiseDataset(IMAGE_SET_SIZE)
+random_noise_dataloader_dataset = RandomNoiseDataset(IMAGE_SET_SIZE, IMAGE_SIZE)
 random_noise_dataloader = DataLoader(random_noise_dataloader_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
-# In[33]:
+# In[20]:
 
 
 for i, (data,_) in enumerate(random_noise_dataloader):
@@ -74,7 +95,7 @@ for i, (data,_) in enumerate(random_noise_dataloader):
     break
 
 
-# In[34]:
+# In[21]:
 
 
 class RandomConstantDataset(Dataset):
@@ -96,15 +117,14 @@ constant_image_dataset = RandomConstantDataset(IMAGE_SET_SIZE)
 constant_image_dataloader = DataLoader(constant_image_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
-# In[35]:
+# In[22]:
 
 
 # cifar 100 image
 from torchvision import datasets, transforms
 from torch.utils.data import Subset
-path = Path("C:/Users/20193696/Desktop/Y5Q3/DeepLearning/data")
 
-cifar_100_dataset = datasets.CIFAR100(root=path, train=True, download=True, transform=preprocess)
+cifar_100_dataset = datasets.CIFAR100(root="./data", train=True, download=True, transform=preprocess)
 # Create a new dataset that only includes the first 100 images
 subset_cifar_100_dataset = Subset(cifar_100_dataset, indices=range(IMAGE_SET_SIZE))
 # Create a dataloader for the subset
@@ -112,7 +132,7 @@ cifar_100_dataloader = torch.utils.data.DataLoader(subset_cifar_100_dataset, bat
 
 
 
-# In[36]:
+# In[23]:
 
 
 for i, (data,_) in enumerate(cifar_100_dataloader):
@@ -120,25 +140,9 @@ for i, (data,_) in enumerate(cifar_100_dataloader):
     break
 
 
-# In[37]:
-
-
-# # cittysckapes unseen data
-from dataclasses import dataclass
-
-@dataclass
-class Fake_args():
-    figure_size: int = 8
-    data_path: str = './data'
-    batch_size: int = 32
-    workers = 4 
-args = Fake_args()
-_ , val_loader = generate_data_loaders(args)
-
-
 # # predict on generated data
 
-# In[38]:
+# In[24]:
 
 
 # general function that makes predictions based on a dataloader and returns the mean activation: 
@@ -156,17 +160,16 @@ def predict_on_data_loader(dataloader):
     return mean_activations
 
 
-# In[39]:
+# In[25]:
 
 
-data_loaders = {"Cityscapes": val_loader,
-                "RandomConstantDataset": constant_image_dataloader,
+data_loaders = {"RandomConstantDataset": constant_image_dataloader,
                 "RandomNoiseDataset": random_noise_dataloader,
-                "Cifar100": cifar_100_dataloader}
-                
+                "Cifar100": cifar_100_dataloader,
+                "Cityscapes": val_loader}
 
 
-# In[40]:
+# In[26]:
 
 
 dataset_mean_activations = {}
@@ -181,7 +184,7 @@ for key, dataloader in data_loaders.items():
 
 # 
 
-# In[ ]:
+# In[33]:
 
 
 import seaborn as sns
@@ -192,7 +195,7 @@ def plot_mean_activations(mean_activations):
     for distr_name, distr in mean_activations.items():
         sns.histplot(distr, bins=100, ax=ax, label=distr_name, kde=True)
     
-    ax.set_title('Mean Activations')
+    ax.set_title('Distribution of Image MSF per dataset')
     ax.set_xlabel('Activation Value')
     ax.set_ylabel('Frequency')
     plt.legend()
@@ -200,10 +203,55 @@ def plot_mean_activations(mean_activations):
     plt.savefig("mean_activations.png")
 
 
-# In[ ]:
+# In[34]:
 
 
 plot_mean_activations(dataset_mean_activations)
+
+
+# #Calculate ROC and plot it
+
+# In[48]:
+
+
+from statistics import mean
+from sklearn.metrics import roc_curve, auc
+# for each dataset, calculate the Roc wheaterh activation is above a threshold
+def calculate_roc(mean_activations):
+    plt.figure()
+    id_images_MSF = mean_activations['mean_activations']
+    IID_target = np.ones(len(id_images_MSF))
+    
+    for distr_name, distr in mean_activations.items():
+        if distr_name == 'Cityscapes':
+            pass
+        else:
+            OOD_target = np.zeros(len(distr))
+            
+        total_MSF = np.concatenate((id_images_MSF, distr))
+        total_target = np.concatenate((IID_target, OOD_target))
+        
+        fpr, tpr, _ = roc_curve(total_target, total_MSF)
+        print(fpr, tpr)
+        roc_auc = auc(fpr, tpr)
+        
+        plt.plot(fpr, tpr, label=f'{distr_name} (area = {roc_auc:.2f})')
+
+    plt.plot([0, 1], [0, 1], color='navy', linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.savefig("roc.png")
+    plt.show()
+
+
+# In[49]:
+
+
+calculate_roc(dataset_mean_activations)
 
 
 # ## Visualize 3d simmelarity
