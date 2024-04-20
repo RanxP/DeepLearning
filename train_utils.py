@@ -24,6 +24,7 @@ def _init_wandb(args):
         # Set the project where this run will be logged
         project="SegmentationTrafficImages",
         # Track hyperparameters and run metadata
+        mode = args.wandb_mode,
         config=args.__dict__)
     time.sleep(2)
     wandb.log({"Program Started":dt.datetime.now()})

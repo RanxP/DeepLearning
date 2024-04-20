@@ -72,6 +72,7 @@ def get_arg_parser():
     parser.add_argument("--TRANSFORM_MASK", type= list, default=TRANSFORM_MASK, help="Mask transformation")
     
     parser.add_argument("--nr_of_decoders", type=float, default=6, help="Dropout rate for the model")
+    parser.add_argument("--wandb_mode", type=str, default="offline", help="Wandb mode")
     
     
     return parser
