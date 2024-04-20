@@ -6,10 +6,10 @@
 # In[18]:
 
 
-from Ensamble_handin.model import Model 
+from model import Model 
 from pathlib import Path
 import torch
-from Ensamble_handin.process_data import preprocess
+from process_data import preprocess
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 from PIL import Image 
