@@ -138,11 +138,12 @@ class EnsambleModel(nn.Module):
     def forward(self, inputs):
         s1, s2, s3, s4, b = self.e(inputs)
         del inputs
+        torch.cuda.empty_cache()
         outputs = []
         for decoder in self.decoders:
             torch.cuda.empty_cache()
             output = decoder(s1, s2, s3, s4, b)
-            output = output.detach().cpu()
+            output = output
             outputs.append(output)
             del output
         return outputs
