@@ -221,7 +221,7 @@ from sklearn.metrics import roc_curve, auc
 # for each dataset, calculate the Roc wheaterh activation is above a threshold
 def calculate_roc(mean_activations):
     plt.figure()
-    id_images_MSF = mean_activations['mean_activations']
+    id_images_MSF = mean_activations['Cityscapes']
     IID_target = np.ones(len(id_images_MSF))
     
     for distr_name, distr in mean_activations.items():
