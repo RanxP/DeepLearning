@@ -86,7 +86,7 @@ def main(args):
 
     # define model
     encoder = pre_trained_encoder()
-    encoder = load_model_weights(encoder, "model_final_uaij0fix.pth")
+    encoder = load_model_weights(encoder, "model_final_vhb12qyp.pth")
     
     classes_to_ignore, decoders, optimizers = create_decoders(3)
     model =  EnsambleModel(encoder, decoders)
