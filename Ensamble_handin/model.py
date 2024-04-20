@@ -176,7 +176,7 @@ class EnsambleModel(nn.Module):
         softmax_score_per_pixel, _ = torch.max(mean_outputs.permute(0,2,3,1), dim=3)
         mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel).item()
         
-        ood_treshold = 0.57
+        ood_treshold = 0.58
         ood:bool = mean_softmax_score_of_image < ood_treshold
         print(f"OOD: {ood}, mean_softmax_score_of_image: {mean_softmax_score_of_image}")
         return ood

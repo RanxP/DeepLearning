@@ -122,12 +122,14 @@ def main(args):
         model.eval()
         # training loop
         for inputs, target in tqdm(train_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
+            torch.cuda.empty_cache()
             inputs = inputs.to(DEVICE)
             # ignore labels that are not in test set 
             target = target.long().squeeze()
             target = map_id_to_train_id(target)
             outputs = model(inputs)
             del inputs
+            
             total_loss = 0
             # multiple outputs 
             for i, output in enumerate(outputs):
@@ -150,21 +152,22 @@ def main(args):
             
             running_loss += total_loss / 3
             print(running_loss)
-            outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
-            normalized_outputs = F.softmax(outputs_tensor, dim=2) # checked is correct
-            mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
-            # var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
-            # ensamble_output = torch.argmax(input=mean_outputs,dim=1)
-            
-            target = target.to(DEVICE)
-            dice_losses_train.append(dice(mean_outputs,target).detach().cpu())
-            results = calibrate_activation(mean_outputs, target)
-            train_total_known_classes_activation.append(results['known_classes_activation'])
-            train_total_unknown_classes_activation.append(results['unknown_classes_activation'])
-            train_total_mean_softmax_score_of_image.append(results['mean_softmax_score_of_image'])
-            # calculate activation of known and unknown classes
-            # Delete variables to free up memory
-            del target, mean_outputs, outputs, outputs_tensor, normalized_outputs, results
+            with torch.no_grad():
+                outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
+                normalized_outputs = F.softmax(outputs_tensor, dim=2) # checked is correct
+                mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
+                # var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
+                # ensamble_output = torch.argmax(input=mean_outputs,dim=1)
+                
+                target = target.to(DEVICE)
+                dice_losses_train.append(dice(mean_outputs,target).detach().cpu())
+                results = calibrate_activation(mean_outputs, target)
+                train_total_known_classes_activation.append(results['known_classes_activation'])
+                train_total_unknown_classes_activation.append(results['unknown_classes_activation'])
+                train_total_mean_softmax_score_of_image.append(results['mean_softmax_score_of_image'])
+                # calculate activation of known and unknown classes
+                # Delete variables to free up memory
+                del target, mean_outputs, outputs, outputs_tensor, normalized_outputs, results
         
         if wandb.config.verbose:
             wandb.log({"train": {"Epoch": (epoch + 1)/wandb.config.number_of_epochs, "CrossEntropy Loss": round(running_loss/35,4)}})
@@ -179,10 +182,10 @@ def main(args):
             #     log_dice_loss(dice_loss,f"train_decoder_{classes_to_ignore[i]}")
                 
         # clean cache
-        torch.cuda.empty_cache()
         dice_losses_val = []
         with torch.no_grad():
             for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
+                torch.cuda.empty_cache()
                 inputs = inputs.to(DEVICE)
                 # ignore labels that are not in test set 
                 target = target.long().squeeze()
