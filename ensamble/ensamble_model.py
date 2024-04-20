@@ -137,8 +137,14 @@ class EnsambleModel(nn.Module):
     
     def forward(self, inputs):
         s1, s2, s3, s4, b = self.e(inputs)
-        # outputs = vmap(self.fdecoder, in_dims=(0, 0, None))(self.params, self.buffers, s1, s2, s3, s4, b)
-        outputs = [decoder(s1, s2, s3, s4, b) for decoder in self.decoders]
+        del inputs
+        outputs = []
+        for decoder in self.decoders:
+            torch.cuda.empty_cache()
+            output = decoder(s1, s2, s3, s4, b)
+            output = output.detach().cpu()
+            outputs.append(output)
+            del output
         return outputs
     
 # function to populate this model for validation purposes 

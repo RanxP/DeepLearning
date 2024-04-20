@@ -127,10 +127,11 @@ def main(args):
             target = target.long().squeeze()
             target = map_id_to_train_id(target)
             outputs = model(inputs)
-            
+            del inputs
+            total_loss = 0
             # multiple outputs 
             for i, output in enumerate(outputs):
-                total_loss = 0
+                torch.cuda.empty_cache()
                 output = output.to(DEVICE)
                 # convert abels to exclude classes
                 decoder_specific_lables = remove_classes_from_tensor(target, classes_to_ignore[i])
@@ -143,6 +144,8 @@ def main(args):
                 optimizers[i].step()
             
                 total_loss += loss.item()
+                del output, decoder_specific_lables, loss
+                
 
             
             running_loss += total_loss / 3
