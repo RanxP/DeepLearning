@@ -81,7 +81,7 @@ def main(args):
     _init_wandb(args)
     _print_quda_info(DEVICE=DEVICE)
     
-    train_loader, val_loader = generate_data_loaders()
+    train_loader, val_loader = generate_data_loaders(args)
 
     # define model
     encoder = pre_trained_encoder()
