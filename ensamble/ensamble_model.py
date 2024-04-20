@@ -55,7 +55,15 @@ class standalone_decoder(nn.Module):
         """ Segmentation output """
         outputs = self.outputs(d4)
 
-        return outputs      
+        return outputs
+    
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                nn.init.xavier_normal_(m.weight, gain=nn.init.calculate_gain('relu'))
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+        return self
     
 
 

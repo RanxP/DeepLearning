@@ -14,7 +14,9 @@ from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 from PIL import Image 
 import numpy as np
-PATH = Path("model/model_final_vhb12qyp.pth")
+
+model_name = "model_final_i1qryj91"
+PATH = Path(f"model/{model_name}.pth")
 
 IMAGE_SIZE = (512, 1024)
 BATCH_SIZE = 10
@@ -200,7 +202,7 @@ def plot_mean_activations(mean_activations):
     ax.set_ylabel('Frequency')
     plt.legend()
     plt.show()
-    plt.savefig("mean_activations.png")
+    plt.savefig(f"mean_activations_{model_name}.png")
 
 
 # In[34]:
@@ -244,7 +246,7 @@ def calculate_roc(mean_activations):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig("roc.png")
+    plt.savefig(f"roc_{model_name}.png")
     plt.show()
 
 

@@ -47,6 +47,7 @@ def create_decoders(nr_decoders:int):
         classes_to_ignore.append( list(range(begin_class,end_class)))
         
         decoder = standalone_decoder().to(DEVICE)
+        decoder = decoder.init_weights()
         decoders.append(decoder)
         optimizers.append(optim.Adam(decoder.parameters(), lr=wandb.config.learning_rate))
     return classes_to_ignore, decoders, optimizers
@@ -70,25 +71,23 @@ def get_arg_parser():
     parser.add_argument("--TRANSFORM_IMAGE", type= list, default=TRANSFORM_IMAGE, help="Image transformation")
     parser.add_argument("--TRANSFORM_MASK", type= list, default=TRANSFORM_MASK, help="Mask transformation")
     
-    parser.add_argument("--dropout_rate", type=float, default=0.0, help="Dropout rate for the model")
+    parser.add_argument("--nr_of_decoders", type=float, default=6, help="Dropout rate for the model")
     
     
     return parser
-
-
 
 def main(args):
     """define your model, trainingsloop optimitzer etc. here"""
     _init_wandb(args)
     _print_quda_info(DEVICE=DEVICE)
     
-    train_loader, val_loader = generate_data_loaders(args)
+    train_loader, val_loader = generate_data_loaders()
 
     # define model
     encoder = pre_trained_encoder()
-    encoder = load_model_weights(encoder, "model_final_vhb12qyp.pth")
+    encoder = load_model_weights(encoder, "model_checkpoint_24_uaij0fix.pth")
     
-    classes_to_ignore, decoders, optimizers = create_decoders(6)
+    classes_to_ignore, decoders, optimizers = create_decoders(wandb.config.nr_of_decoders)
     model =  EnsambleModel(encoder, decoders)
     #load_encoder_weights(model, "model_final_vhb12qyp.pth")
     model.freeze_encoder()
