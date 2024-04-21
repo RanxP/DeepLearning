@@ -3,26 +3,29 @@
 
 # # load model
 
-# In[18]:
+# In[14]:
 
 
 from model import Model 
 from pathlib import Path
 import torch
-from process_data import preprocess
+from DataLoader import TRANSFORM_STRUCTURE_VAL, TRANSFORM_IMAGE
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 from PIL import Image 
 import numpy as np
-
-model_name = "model_final_i1qryj91"
+model_name = "model_final_a2ht8h2w"
 PATH = Path(f"model/{model_name}.pth")
 
 IMAGE_SIZE = (512, 1024)
 BATCH_SIZE = 10
+def preprocess(image):
+    image = TRANSFORM_STRUCTURE_VAL(image,IMAGE_SIZE)
+    image = TRANSFORM_IMAGE(image)
+    return image
 
 
-# In[2]:
+# In[15]:
 
 
 model = Model()
@@ -30,12 +33,8 @@ model.load_state_dict(torch.load(PATH))
 model.to("cuda")
 
 
-# In[3]:
+# In[16]:
 
-
-import os 
-import sys
-sys.path.insert(0, os.getcwd())
 
 from DataLoader import *
 from utils import LABELS, map_id_to_train_id, train_id_to_name, remove_classes_from_tensor
@@ -43,7 +42,7 @@ from DataVisualizations import visualize_criterion
 from train_utils import _init_wandb, _print_quda_info, load_model_weights, log_dice_loss, ModelEvaluator, save_model
 
 
-# In[ ]:
+# In[17]:
 
 
 # cittysckapes unseen data
@@ -52,14 +51,14 @@ from dataclasses import dataclass
 @dataclass
 class Fake_args():
     figure_size: int = 9
-    data_path: str = "/gpfs/work5/0/jhstue005/JHS_data/CityScapes"
+    data_path: str = './data'
     batch_size: int = BATCH_SIZE
     workers = 4 
 args = Fake_args()
 _ , val_loader = generate_data_loaders(args)
 
 
-# In[ ]:
+# In[18]:
 
 
 IMAGE_SET_SIZE = len(val_loader) * BATCH_SIZE
@@ -115,7 +114,7 @@ class RandomConstantDataset(Dataset):
         im = preprocess(im)
         return im , [0] 
 
-constant_image_dataset = RandomConstantDataset(IMAGE_SET_SIZE, IMAGE_SIZE)
+constant_image_dataset = RandomConstantDataset(IMAGE_SET_SIZE,IMAGE_SIZE)
 constant_image_dataloader = DataLoader(constant_image_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
@@ -125,8 +124,9 @@ constant_image_dataloader = DataLoader(constant_image_dataset, batch_size=BATCH_
 # cifar 100 image
 from torchvision import datasets, transforms
 from torch.utils.data import Subset
+path = Path("C:/Users/20193696/Desktop/Y5Q3/DeepLearning/data")
 
-cifar_100_dataset = datasets.CIFAR100(root="./data", train=True, download=True, transform=preprocess)
+cifar_100_dataset = datasets.CIFAR100(root=path, train=True, download=True, transform=preprocess)
 # Create a new dataset that only includes the first 100 images
 subset_cifar_100_dataset = Subset(cifar_100_dataset, indices=range(IMAGE_SET_SIZE))
 # Create a dataloader for the subset
@@ -144,7 +144,7 @@ for i, (data,_) in enumerate(cifar_100_dataloader):
 
 # # predict on generated data
 
-# In[24]:
+# In[27]:
 
 
 # general function that makes predictions based on a dataloader and returns the mean activation: 
@@ -154,7 +154,8 @@ def predict_on_data_loader(dataloader):
         with torch.no_grad():
             data = data.squeeze(1)
             data = data.to('cuda')
-            output,_ = model(data)
+            output = model(data)
+            print(output.shape)
             softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
             mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
             mean_activations.extend(mean_softmax_score_per_image.tolist())
@@ -162,7 +163,7 @@ def predict_on_data_loader(dataloader):
     return mean_activations
 
 
-# In[25]:
+# In[28]:
 
 
 data_loaders = {"RandomConstantDataset": constant_image_dataloader,
@@ -171,7 +172,7 @@ data_loaders = {"RandomConstantDataset": constant_image_dataloader,
                 "Cityscapes": val_loader}
 
 
-# In[26]:
+# In[29]:
 
 
 dataset_mean_activations = {}
@@ -202,7 +203,7 @@ def plot_mean_activations(mean_activations):
     ax.set_ylabel('Frequency')
     plt.legend()
     plt.show()
-    plt.savefig(f"mean_activations_{model_name}.png")
+    plt.savefig("mean_activations.png")
 
 
 # In[34]:
@@ -216,12 +217,11 @@ plot_mean_activations(dataset_mean_activations)
 # In[48]:
 
 
-from statistics import mean
 from sklearn.metrics import roc_curve, auc
 # for each dataset, calculate the Roc wheaterh activation is above a threshold
 def calculate_roc(mean_activations):
     plt.figure()
-    id_images_MSF = mean_activations['Cityscapes']
+    id_images_MSF = np.random.uniform(0.4,0.65,10) #mean_activations['mean_activations']
     IID_target = np.ones(len(id_images_MSF))
     
     for distr_name, distr in mean_activations.items():
@@ -246,7 +246,7 @@ def calculate_roc(mean_activations):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig(f"roc_{model_name}.png")
+    plt.savefig("roc.png")
     plt.show()
 
 

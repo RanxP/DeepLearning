@@ -9,4 +9,4 @@
 cd /gpfs/home6/scur0773/DeepLearning/
 mkdir wandb/$SLURM_JOBID
 
-srun apptainer exec --nv /gpfs/work5/0/jhstue005/JHS_data/5lsm0_v1.sif python3 Ensamble_handin/visualize_distributions.py
+srun apptainer exec --nv /gpfs/work5/0/jhstue005/JHS_data/5lsm0_v1.sif python3 visualize_distributions_one.py
