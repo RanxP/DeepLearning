@@ -158,7 +158,7 @@ def predict_on_data_loader(dataloader):
             print(output.shape)
             softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
             print(softmax_score_per_pixel.shape)
-            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel)
+            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
             print(mean_softmax_score_per_image.shape)
             mean_activations.extend(mean_softmax_score_per_image.tolist())
 
