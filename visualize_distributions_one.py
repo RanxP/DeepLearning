@@ -148,19 +148,20 @@ for i, (data,_) in enumerate(cifar_100_dataloader):
 
 
 # general function that makes predictions based on a dataloader and returns the mean activation: 
-def predict_on_data_loader(dataloader):
-    mean_activations = []
-    for i, (data, _ ) in enumerate(dataloader):
-        with torch.no_grad():
-            data = data.squeeze(1)
-            data = data.to('cuda')
-            output = model(data)
-            print(output.shape)
-            softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
-            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
-            mean_activations.extend(mean_softmax_score_per_image.tolist())
-
-    return mean_activations
+import seaborn as sns
+def plot_mean_activations(mean_activations):
+    
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    for distr_name, distr in mean_activations.items():
+        sns.histplot(distr, bins=100, ax=ax, label=distr_name, kde=True)
+    
+    ax.set_title('Distribution of Image MSF per dataset')
+    ax.set_xlabel('Activation Value')
+    ax.set_ylabel('Frequency')
+    plt.legend()
+    plt.show()
+    plt.savefig(f"mean_activations_{model_name}.png")
 
 
 # In[28]:
@@ -207,10 +208,7 @@ def plot_mean_activations(mean_activations):
 
 
 # In[34]:
-
-
 plot_mean_activations(dataset_mean_activations)
-
 
 # #Calculate ROC and plot it
 
@@ -221,7 +219,7 @@ from sklearn.metrics import roc_curve, auc
 # for each dataset, calculate the Roc wheaterh activation is above a threshold
 def calculate_roc(mean_activations):
     plt.figure()
-    id_images_MSF = np.random.uniform(0.4,0.65,10) #mean_activations['mean_activations']
+    id_images_MSF = mean_activations['Cityscapes']
     IID_target = np.ones(len(id_images_MSF))
     
     for distr_name, distr in mean_activations.items():
@@ -246,7 +244,7 @@ def calculate_roc(mean_activations):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig("roc.png")
+    plt.savefig(f"roc_{model_name}.png")
     plt.show()
 
 

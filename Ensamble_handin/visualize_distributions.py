@@ -155,11 +155,12 @@ def predict_on_data_loader(dataloader):
             data = data.squeeze(1)
             data = data.to('cuda')
             output,_ = model(data)
-            softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
+            softmax_score_per_pixel, ood = torch.max(output.permute(0,2,3,1), dim=3)
             mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
             mean_activations.extend(mean_softmax_score_per_image.tolist())
 
     return mean_activations
+
 
 
 # In[25]:
