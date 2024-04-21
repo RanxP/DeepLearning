@@ -9,4 +9,4 @@
 cd /gpfs/home6/scur0773/DeepLearning/
 mkdir wandb/$SLURM_JOBID
 
-srun apptainer exec --nv /gpfs/work5/0/jhstue005/JHS_data/5lsm0_v1.sif /bin/bash run_container.sh
+srun apptainer exec --nv /gpfs/work5/0/jhstue005/JHS_data/5lsm0_v1.sif /bin/bash upload_offline_run.sh
