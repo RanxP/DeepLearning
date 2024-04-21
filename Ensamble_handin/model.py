@@ -176,10 +176,10 @@ class EnsambleModel(nn.Module):
         softmax_score_per_pixel, _ = torch.max(mean_outputs.permute(0,2,3,1), dim=3)
         mean_softmax_score_of_image = torch.mean(softmax_score_per_pixel).item()
         
-        ood_treshold = 0.58
-        ood:bool = mean_softmax_score_of_image < ood_treshold
-        print(f"OOD: {ood}, mean_softmax_score_of_image: {mean_softmax_score_of_image}")
-        return ood
+        ood_treshold = 0.7
+        consider_image :bool = mean_softmax_score_of_image >= ood_treshold
+        print(f"consider_image: {consider_image}, mean_softmax_score_of_image: {mean_softmax_score_of_image}")
+        return consider_image
             
 # function to populate this model for validation purposes 
 def Model() -> EnsambleModel:
@@ -201,7 +201,7 @@ def Model() -> EnsambleModel:
         return decoders
     
     encoder = pre_trained_encoder()
-    decoders = create_decoders(3)
+    decoders = create_decoders(6)
     
     model = EnsambleModel(encoder,decoders)
     model.eval()

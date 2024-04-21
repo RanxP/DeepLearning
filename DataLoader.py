@@ -26,9 +26,9 @@ def TRANSFORM_STRUCTURE(img, IMG_SIZE):
 
     # random.seed(torch.initial_seed())
     # # resize_factor =  random.uniform((IMG_SIZE[0]/1024),1 )
-    # resize_factor =  random.uniform(0.8,1.2)
-    # resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
-    # img = transforms.RandomCrop(size=resized_img_size)(img)
+    resize_factor =  random.uniform(0.8,1.2)
+    resized_img_size = (int(IMG_SIZE[0] * resize_factor), int(IMG_SIZE[1] * resize_factor))
+    img = transforms.RandomCrop(size=resized_img_size)(img)
 
     # manditory resize
     img = transforms.Resize(IMG_SIZE, interpolation=transforms.InterpolationMode.LANCZOS)(img)
