@@ -1,45 +1,50 @@
 # Final Assignment
 
-This repository serves as the starting kit for the 5LSM0 final assignment.
+This repository serves as the my assignment for the 5LSM0 final assignment.
 This assignment is a part of the 5LSM0 course. It involves working with the Cityscapes dataset and training a neural network. The assignment contributes to 50% of your final grade.
-
-## Getting Started
-
-### Dependencies
-
-We already created a DockerContainer with all dependencies to run on Snellius, in the run_main.sh file we refer to this container. You don't have to changes anything for this.
-
-### Installing
-
-To get started with this project, you need to clone the repository to Snellius or your local machine. You can do this by running the following command in your terminal:
-
-```bash
-git clone https://github.com/5LSM0/FinalAssignment.git
-```
-
-After cloning the repository, navigate to the project directory:
-
-```bash
-cd FinalAssignment
-```
-
-### File Descriptions
-
-Here's a brief overview of the files you'll find in this repository:
-
-- **run_container.sh:** Contains the script for running the container. In this file you have the option to enter your wandb keys if you have them and additional arguments if you have implemented them in the train.py file.
-
-  
-- **run_main:** Includes the code for building the Docker container. In this file, you only need to change the settings SBATCH (the time your job will run on the server) and ones you need to put your username at the specified location.
-  
-
-- **model.py:** Defines the neural network architecture.
-
-  
-- **train.py:** Contains the code for training the neural network.
-
+it build on the starter kit of: 
 ### Authors
 
 - T.J.M. Jaspers
 - C.H.B. Claessens
 - C.H.J. Kusters
+
+## Getting Started
+
+Welcome to the repository let me walk you trough what is what from from top to bottom. 
+
+Folders:
+**Data** - contains my local development data
+**ensamble** - all ensamble specific files
+**ensamble_handin/** - an alterd u-net that consumes less memory is at the core of this file. as u net that keeps all memory cached is too large for hand in 
+    **Ensamble_handin/visualize_distributions.py** constructs the visuals seen for figure 1/3 and the ROC scores.
+    re rest of the files are used for submission, but are also needed for functioning of this file. 
+**model** - contains my local development models
+
+
+The main folder is everything i needed to train one u-net + shared functions with training an ensamble.
+
+- DataLoader Contains dataloaders, these are constructed with the help of val_loader and Train loader which have their own transformations
+
+- Data Visualization - Contains functions that are used to plot classifications, such as temp_plot
+
+- **model.py:** Defines the neural network architecture. is ment for training
+
+- **train.py** contains the training logging and evaluation loop of the single u net.
+
+- **train_utils.py** contains the functions needed in training and shared across single and ensamble u net
+
+- **utils** Provided utils file with extra functionality to convert classes
+
+Function files
+run_container. specifies what file should be trained. has two possible directories
+    1. train.py 
+    2. ensamble/train.py
+
+run_results, quick way to run results without wandb, expects either 
+    1. ensamble_handin/visualize_distriutions.py 
+    2. visualize_distriutions_one.py
+
+
+### alterations by 
+Ranx Peeters
