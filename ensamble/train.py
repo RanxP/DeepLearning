@@ -183,8 +183,10 @@ def main(args):
                 
         # clean cache
         dice_losses_val = []
+        running_val_loss = 0
         with torch.no_grad():
             for inputs, target in tqdm(val_loader, desc=f"Training epoch {epoch+1}/{wandb.config.number_of_epochs}"):
+                total_loss = 0
                 torch.cuda.empty_cache()
                 inputs = inputs.to(DEVICE)
                 # ignore labels that are not in test set 
@@ -193,7 +195,6 @@ def main(args):
                 outputs = model(inputs)
                 # multiple outputs 
                 for i, output in enumerate(outputs):
-                    total_loss = 0
                     output = output.to(DEVICE)
                     # convert abels to exclude classes
                     decoder_specific_lables = remove_classes_from_tensor(target, classes_to_ignore[i])
@@ -201,19 +202,14 @@ def main(args):
                     # devise los for one specific decoder
                     loss = criterion(output,decoder_specific_lables)
                     dice_decoder_losses[i].append(dice(output,decoder_specific_lables).detach().cpu())
-                    
+                    total_loss += loss.item()
                     del output, decoder_specific_lables, loss
-                
-                total_loss += loss.item()
-                
-                
-                running_loss += total_loss / 3
-                print(running_loss)
+                running_val_loss += total_loss / 3
                 outputs_tensor = torch.stack(outputs) # shape (3,4,20,512,1024)
                 normalized_outputs = F.softmax(outputs_tensor, dim=2) # checked is correct
                 mean_outputs = torch.mean(normalized_outputs, dim=0, keepdim=False).to(DEVICE)
-                var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
-                ensamble_output = torch.argmax(input=mean_outputs,dim=1)
+                # var_outputs = torch.var(normalized_outputs, dim=0, keepdim=False)
+                # ensamble_output = torch.argmax(input=mean_outputs,dim=1)
                 target = target.to(DEVICE)
                 dice_losses_val.append(dice(mean_outputs,target).detach().cpu())
                 results = calibrate_activation(mean_outputs, target)
@@ -225,6 +221,8 @@ def main(args):
                 del target, mean_outputs, outputs, outputs_tensor, normalized_outputs, results
             
         if wandb.config.verbose:
+            wandb.log({"val": {"CrossEntropy Loss": round(running_loss/35,4)}})
+
             # log mean_softmax_score_of_image and activation of known and unknown classes
             wandb.log({"train": {"mean_softmax_score_of_image": round(torch.mean(torch.tensor(train_total_mean_softmax_score_of_image)).item(),4),
                                 "known_classes_activation": round(torch.mean(torch.tensor(train_total_known_classes_activation)).item(),4),
