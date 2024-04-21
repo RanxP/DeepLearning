@@ -51,7 +51,7 @@ from dataclasses import dataclass
 @dataclass
 class Fake_args():
     figure_size: int = 9
-    data_path: str = './data'
+    data_path: str = "/gpfs/work5/0/jhstue005/JHS_data/CityScapes"
     batch_size: int = BATCH_SIZE
     workers = 4 
 args = Fake_args()
@@ -158,7 +158,7 @@ def predict_on_data_loader(dataloader):
             print(output.shape)
             softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
             print(softmax_score_per_pixel.shape)
-            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
+            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel)
             print(mean_softmax_score_per_image.shape)
             mean_activations.extend(mean_softmax_score_per_image.tolist())
 
