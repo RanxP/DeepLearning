@@ -48,6 +48,8 @@ def get_arg_parser():
     parser.add_argument("--TRANSFORM_MASK", type= list, default=TRANSFORM_MASK, help="Mask transformation")
     
     parser.add_argument("--dropout_rate", type=float, default=0.0, help="Dropout rate for the model")
+    parser.add_argument("--wandb_mode", type=str, default="offline", help="Wandb mode")
+
     
     
     return parser
@@ -167,8 +169,8 @@ def main(args):
             
             process_validation_performance(criterion_val_performance)
             # save checkpoint if performance is better
-            if (epoch+ 1) % 4 == 0:
-                save_model(model, args, f"checkpoint_{epoch}")
+            # if (epoch+ 1) % 4 == 0:
+            #     save_model(model, args, f"checkpoint_{epoch}")
             
             if (epoch + 1)/num_epochs > 0.75:
                 if ME.best_performace(criterion_val_performance['loss']):
