@@ -117,7 +117,7 @@ def main(args):
         torch.cuda.empty_cache()
 
         running_loss = 0.0
-        dice_decoder_losses = [[],[],[]]
+        dice_decoder_losses = [[]] * wandb.config.nr_of_decoders
         dice_losses_train = []
         model.eval()
         # training loop
