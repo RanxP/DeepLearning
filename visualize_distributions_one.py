@@ -148,20 +148,21 @@ for i, (data,_) in enumerate(cifar_100_dataloader):
 
 
 # general function that makes predictions based on a dataloader and returns the mean activation: 
-import seaborn as sns
-def plot_mean_activations(mean_activations):
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    
-    for distr_name, distr in mean_activations.items():
-        sns.histplot(distr, bins=100, ax=ax, label=distr_name, kde=True)
-    
-    ax.set_title('Distribution of Image MSF per dataset')
-    ax.set_xlabel('Activation Value')
-    ax.set_ylabel('Frequency')
-    plt.legend()
-    plt.show()
-    plt.savefig(f"mean_activations_{model_name}.png")
+def predict_on_data_loader(dataloader):
+    mean_activations = []
+    for i, (data, _ ) in enumerate(dataloader):
+        with torch.no_grad():
+            data = data.squeeze(1)
+            data = data.to('cuda')
+            output = model(data)
+            print(output.shape)
+            softmax_score_per_pixel, _ = torch.max(output.permute(0,2,3,1), dim=3)
+            print(softmax_score_per_pixel.shape)
+            mean_softmax_score_per_image = torch.mean(softmax_score_per_pixel,dim=(1,2))
+            print(mean_softmax_score_per_image.shape)
+            mean_activations.extend(mean_softmax_score_per_image.tolist())
+
+    return mean_activations
 
 
 # In[28]:
@@ -204,7 +205,7 @@ def plot_mean_activations(mean_activations):
     ax.set_ylabel('Frequency')
     plt.legend()
     plt.show()
-    plt.savefig("mean_activations.png")
+    plt.savefig(f"mean_activations_{model_name}.png")
 
 
 # In[34]:
